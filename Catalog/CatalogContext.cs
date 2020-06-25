@@ -24,22 +24,35 @@ namespace Kaenx.DataContext.Catalog
         public DbSet<AppParameterTypeEnumViewModel> AppParameterTypeEnums { get; set; }
         public DbSet<Hardware2AppModel> Hardware2App { get; set; }
 
-
+        private bool generatePath;
         private LocalConnectionCatalog _conn;
 
         public CatalogContext()
         {
-            //_connectionString = "Data Source=" + "Catalog.db";
             _conn = new LocalConnectionCatalog() { DbHostname = "Catalog.db", Type = LocalConnectionCatalog.DbConnectionType.SqlLite };
+            generatePath = false;
         }
-        public CatalogContext(LocalConnectionCatalog conn) => _conn = conn;
+
+        public CatalogContext(LocalConnectionCatalog conn = null, bool _generatePath = false)
+        {
+            generatePath = _generatePath;
+            if (conn == null)
+                _conn = new LocalConnectionCatalog() { DbHostname = "Catalog.db", Type = LocalConnectionCatalog.DbConnectionType.SqlLite };
+            else
+                _conn = conn;
+        }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             switch (_conn.Type)
             {
                 case LocalConnectionCatalog.DbConnectionType.SqlLite:
-                    optionsBuilder.UseSqlite($"Data Source={_conn.DbHostname}");
+                    string file;
+                    if (generatePath)
+                        file = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), _conn.DbHostname);
+                    else
+                        file = _conn.DbHostname;
+                    optionsBuilder.UseSqlite($"Data Source={file}");
                     break;
 
                 case LocalConnectionCatalog.DbConnectionType.MySQL:

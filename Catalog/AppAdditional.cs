@@ -17,5 +17,6 @@ namespace Kaenx.DataContext.Catalog
         public byte[] ComsAll { get; set; }
         public byte[] ComsDefault { get; set; }
         public byte[] ParamsHelper { get; set; }
+        public byte[] Assignments { get; set; }
     }
 }

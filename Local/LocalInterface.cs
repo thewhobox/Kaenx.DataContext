@@ -14,5 +14,12 @@ namespace Kaenx.DataContext.Local
         public string PhAddr { get; set; }
         public string Ip { get; set; }
         public int Port { get; set; }
+        public InterfaceType Type { get; set; }
+    }
+
+    public enum InterfaceType
+    {
+        USB,
+        IP
     }
 }

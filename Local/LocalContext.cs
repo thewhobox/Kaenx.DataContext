@@ -15,6 +15,12 @@ namespace Kaenx.DataContext.Local
 
         private bool generatePath;
 
+
+        public LocalContext()
+        {
+            generatePath = false;
+        }
+
         public LocalContext(bool _generatePath = false)
         {
             generatePath = _generatePath;

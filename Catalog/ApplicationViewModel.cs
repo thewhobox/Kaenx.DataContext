@@ -10,7 +10,7 @@ namespace Kaenx.DataContext.Catalog
     public class ApplicationViewModel
     {
         [Key]
-        [MaxLength(255)]
+        [MaxLength(18)]
         public string Id { get; set; }
         [MaxLength(100)]
         public string Name { get; set; }
@@ -21,14 +21,14 @@ namespace Kaenx.DataContext.Catalog
         public int Manufacturer { get; set; }
         public bool IsRelativeSegment { get; set; }
 
-        [MaxLength(40)]
+        [MaxLength(30)]
         public string Table_Object { get; set; }
         public int Table_Object_Offset { get; set; }
-        [MaxLength(40)]
+        [MaxLength(30)]
         public string Table_Group { get; set; }
         public int Table_Group_Offset { get; set; }
         public int Table_Group_Max { get; set; }
-        [MaxLength(40)]
+        [MaxLength(30)]
         public string Table_Assosiations { get; set; }
         public int Table_Assosiations_Offset { get; set; }
         public int Table_Assosiations_Max { get; set; }

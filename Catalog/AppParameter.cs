@@ -12,16 +12,16 @@ namespace Kaenx.DataContext.Catalog
         [Key]
         [MaxLength(255)]
         public string Id { get; set; }
-        [MaxLength(100)]
+        [MaxLength(255)]
         public string ParameterTypeId { get; set; }
-        [MaxLength(100)]
+        [MaxLength(18)]
         public string ApplicationId { get; set; }
         public string Text { get; set; }
         [MaxLength(20)]
         public string SuffixText { get; set; }
         public string Value { get; set; }
 
-        [MaxLength(100)]
+        [MaxLength(30)]
         public string SegmentId { get; set; }
         public SegmentTypes SegmentType { get; set; }
         public int UnionId { get; set; }

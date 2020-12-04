@@ -8,9 +8,10 @@ namespace Kaenx.DataContext.Catalog
     public class Hardware2AppModel
     {
         [Key]
-        [MaxLength(255)]
         public int Id { get; set; }
+        [MaxLength(100)]
         public string HardwareId { get; set; }
+        [MaxLength(18)]
         public string ApplicationId { get; set; }
         [MaxLength(100)]
         public string Name { get; set; }

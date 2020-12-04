@@ -8,7 +8,7 @@ namespace Kaenx.DataContext.Catalog
     public class AppAdditional
     {
         [Key]
-        [MaxLength(255)]
+        [MaxLength(18)]
         public string Id { get; set; }
         public byte[] LoadProcedures { get; set; }
         public byte[] Dynamic { get; set; }

@@ -3,14 +3,16 @@ using System;
 using Kaenx.DataContext.Local;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Kaenx.DataContext.Migrations.Local
 {
     [DbContext(typeof(LocalContext))]
-    partial class LocalContextModelSnapshot : ModelSnapshot
+    [Migration("20201220112953_Remote2")]
+    partial class Remote2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -80,6 +82,12 @@ namespace Kaenx.DataContext.Migrations.Local
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Auth")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ConnType")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Ip")
                         .HasColumnType("TEXT");
 
@@ -124,26 +132,6 @@ namespace Kaenx.DataContext.Migrations.Local
                     b.HasKey("Id");
 
                     b.ToTable("Projects");
-                });
-
-            modelBuilder.Entity("Kaenx.DataContext.Local.LocalRemote", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Authentification")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Host")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Remotes");
                 });
 #pragma warning restore 612, 618
         }

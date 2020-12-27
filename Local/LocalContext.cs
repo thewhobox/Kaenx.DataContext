@@ -12,6 +12,7 @@ namespace Kaenx.DataContext.Local
         public DbSet<LocalConnectionProject> ConnsProject { get; set; }
         public DbSet<LocalConnectionCatalog> ConnsCatalog { get; set; }
         public DbSet<LocalInterface> Interfaces { get; set; }
+        public DbSet<LocalRemote> Remotes { get; set; }
 
         private bool generatePath;
 

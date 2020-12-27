@@ -12,6 +12,7 @@ namespace Kaenx.DataContext.Catalog
         [Key]
         [MaxLength(255)]
         public string Id { get; set; }
+        [MaxLength(18)]
         public string ApplicationId { get; set; }
         public ParamTypes Type { get; set; }
         public int Size { get; set; }

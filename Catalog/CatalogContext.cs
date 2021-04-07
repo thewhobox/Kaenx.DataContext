@@ -58,7 +58,11 @@ namespace Kaenx.DataContext.Catalog
                 case LocalConnectionCatalog.DbConnectionType.MySQL:
                     optionsBuilder.UseMySql($"Server={_conn.DbHostname};Database={_conn.DbName};Uid={_conn.DbUsername};Pwd={_conn.DbPassword};");
                     break;
-            }  
+
+                case LocalConnectionCatalog.DbConnectionType.Memory:
+                    optionsBuilder.UseSqlite("DataSource=file::memory:?cache=shared");
+                    break;
+            }
         }
     }
 }

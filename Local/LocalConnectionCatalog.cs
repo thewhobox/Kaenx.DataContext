@@ -21,7 +21,8 @@ namespace Kaenx.DataContext.Local
         public enum DbConnectionType
         {
             SqlLite,
-            MySQL
+            MySQL,
+            Memory,
         }
     }
 }

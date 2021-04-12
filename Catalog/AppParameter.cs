@@ -46,6 +46,11 @@ namespace Kaenx.DataContext.Catalog
             Access = para.Access;
             Value = para.Value;
         }
+
+        public override string ToString()
+        {
+            return "ParameterId = " + Id;
+        }
     }
 
     public enum SegmentTypes

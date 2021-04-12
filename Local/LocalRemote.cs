@@ -12,6 +12,9 @@ namespace Kaenx.DataContext.Local
         public int Id { get; set; }
         public string Name { get; set; }
         public string Host { get; set; }
+        public string Group { get; set; }
+        public string Code { get; set; }
+        public bool IsSecure { get; set; } = true;
         public string Authentification { get; set; }
 
         public string Description

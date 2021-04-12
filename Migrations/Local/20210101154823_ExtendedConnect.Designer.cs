@@ -3,14 +3,16 @@ using System;
 using Kaenx.DataContext.Local;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Kaenx.DataContext.Migrations.Local
 {
     [DbContext(typeof(LocalContext))]
-    partial class LocalContextModelSnapshot : ModelSnapshot
+    [Migration("20210101154823_ExtendedConnect")]
+    partial class ExtendedConnect
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -111,9 +113,6 @@ namespace Kaenx.DataContext.Migrations.Local
 
                     b.Property<bool>("IsReconstruct")
                         .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("LastOpened")
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");

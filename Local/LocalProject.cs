@@ -14,5 +14,6 @@ namespace Kaenx.DataContext.Local
         public bool IsReconstruct { get; set; } = false;
         public int ConnectionId { get; set; }
         public byte[] Thumbnail { get; set; }
+        public DateTime LastOpened { get; set; }
     }
 }

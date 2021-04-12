@@ -17,6 +17,9 @@ namespace Kaenx.DataContext.Project
         public bool LoadedPA { get; set; }
         public byte[] Serial { get; set; }
 
+        public bool IsDeactivated { get; set; }
+        public int LastGroupCount { get; set; }
+
         public LineDeviceModel() { }
         public LineDeviceModel(int projId) { ProjectId = projId; }
     }

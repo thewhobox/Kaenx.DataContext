@@ -21,6 +21,13 @@ namespace Kaenx.DataContext.Project
         private bool generatePath;
         private LocalConnectionProject _conn;
 
+
+        public ProjectContext()
+        {
+            generatePath = false;
+            _conn = new LocalConnectionProject() { DbHostname = "Projects.db", Type = LocalConnectionProject.DbConnectionType.SqlLite };
+        }
+
         public ProjectContext(bool _generatePath = false)
         {
             generatePath = _generatePath;

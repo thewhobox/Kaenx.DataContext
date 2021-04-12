@@ -64,7 +64,7 @@ namespace Kaenx.DataContext.Catalog
             }
             string[] splitted = size.Split(' ');
             int i = int.Parse(splitted[0]);
-            int m = (splitted[1] == "Byte") ? 8 : 1;
+            int m = (splitted[1].StartsWith("Byte")) ? 8 : 1;
             Size = i * m;
         }
 

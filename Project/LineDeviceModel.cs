@@ -10,8 +10,8 @@ namespace Kaenx.DataContext.Project
         public int ParentId { get; set; }
         public int ProjectId { get; set; }
         public string Name { get; set; }
-        public string DeviceId { get; set; }
-        public string ApplicationId { get; set; }
+        public int DeviceId { get; set; }
+        public int ApplicationId { get; set; }
         public bool LoadedGA { get; set; }
         public bool LoadedApp { get; set; }
         public bool LoadedPA { get; set; }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Kaenx.DataContext.Import;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -11,10 +12,11 @@ namespace Kaenx.DataContext.Catalog
     public class DeviceViewModel
     {
         [Key]
-        [MaxLength(255)]
-        public string Id { get; set; }
-        [MaxLength(7)]
-        public string ManufacturerId { get; set; }
+        public int Id { get; set; }
+        public ImportTypes ImportType { get; set; }
+        public int ManufacturerId { get; set; }
+        [MaxLength(100)]
+        public string Key { get; set; }
         [MaxLength(100)]
         public string Name { get; set; }
         [MaxLength(300)]
@@ -32,9 +34,7 @@ namespace Kaenx.DataContext.Catalog
         public bool IsCoupler { get; set; }
         public int BusCurrent { get; set; }
 
-        [MaxLength(100)]
-        public string CatalogId { get; set; }
-        [MaxLength(100)]
-        public string HardwareId { get; set; }
+        public int CatalogId { get; set; }
+        public int HardwareId { get; set; }
     }
 }

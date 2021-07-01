@@ -13,7 +13,7 @@ namespace Kaenx.DataContext.Project
         [Key]
         public int Id { get; set; }
         public int DeviceId { get; set; }
-        public string ParamId { get; set; }
+        public int ParamId { get; set; }
         public int StateId { get; set; }
         public string Value { get; set; }
     }

@@ -23,6 +23,7 @@ namespace Kaenx.DataContext.Catalog
         public DbSet<AppParameterTypeViewModel> AppParameterTypes { get; set; }
         public DbSet<AppParameterTypeEnumViewModel> AppParameterTypeEnums { get; set; }
         public DbSet<Hardware2AppModel> Hardware2App { get; set; }
+        public DbSet<ManufacturerViewModel> Manufacturers { get; set; }
 
         private bool generatePath;
         private LocalConnectionCatalog _conn;
@@ -41,6 +42,17 @@ namespace Kaenx.DataContext.Catalog
             else
                 _conn = conn;
         }
+
+
+        protected override void OnModelCreating(ModelBuilder mb)
+        {
+            //mb.Entity<CatalogViewModel>()
+            //    .HasKey(nameof(CatalogViewModel.Id), nameof(CatalogViewModel.ImportType));
+            //mb.Entity<CatalogViewModel>()
+            //    .Property(f => f.Id)
+            //    .ValueGeneratedOnAdd(); ID = ManuId
+        }
+
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

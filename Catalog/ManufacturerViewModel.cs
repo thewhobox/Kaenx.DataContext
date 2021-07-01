@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Kaenx.DataContext.Import;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -10,9 +11,10 @@ namespace Kaenx.DataContext.Catalog
     public class ManufacturerViewModel
     {
         [Key]
-        public string Id { get; set; }
+        public int Id { get; set; }
+        public int ManuId { get; set; }
+        public ImportTypes ImportType { get; set; }
         [MaxLength(100)]
         public string Name { get; set; }
-        public int KnxManufacturerId { get; set; }
     }
 }

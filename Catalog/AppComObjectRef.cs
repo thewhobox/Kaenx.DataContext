@@ -10,9 +10,9 @@ namespace Kaenx.DataContext.Catalog
     public class AppComObjectRef
     {
         [Key]
-        [MaxLength(255)]
-        public string Id { get; set; }
-        public string RefId { get; set; }
+        public int UId { get; set; }
+        public int Id { get; set; }
+        public int RefId { get; set; }
 
         public string Text { get; set; }
         public string FunctionText { get; set; }

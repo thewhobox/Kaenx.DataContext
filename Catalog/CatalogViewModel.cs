@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Kaenx.DataContext.Import;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -10,10 +11,11 @@ namespace Kaenx.DataContext.Catalog
     public class CatalogViewModel
     {
         [Key]
-        [MaxLength(255)]
-        public string Id { get; set; }
+        public int Id { get; set; }
         [MaxLength(100)]
-        public string ParentId { get; set; }
+        public string Key { get; set; }
+        public ImportTypes ImportType { get; set; }
+        public int ParentId { get; set; }
         [MaxLength(100)]
         public string Name { get; set; }
     }

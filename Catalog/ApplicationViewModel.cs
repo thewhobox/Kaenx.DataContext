@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Kaenx.DataContext.Import;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -10,10 +11,12 @@ namespace Kaenx.DataContext.Catalog
     public class ApplicationViewModel
     {
         [Key]
-        [MaxLength(18)]
-        public string Id { get; set; }
+        public int Id { get; set; }
+        [MaxLength(40)]
+        public string Hash { get; set; }
         [MaxLength(100)]
         public string Name { get; set; }
+        public int HardwareId { get; set; }
         public int Version { get; set; }
         public int Number { get; set; }
         [MaxLength(7)]
@@ -21,17 +24,17 @@ namespace Kaenx.DataContext.Catalog
         public int Manufacturer { get; set; }
         public bool IsRelativeSegment { get; set; }
 
-        [MaxLength(30)]
-        public string Table_Object { get; set; }
+        public int Table_Object { get; set; } = -1;
         public int Table_Object_Offset { get; set; }
-        [MaxLength(30)]
-        public string Table_Group { get; set; }
+
+        public int Table_Group { get; set; } = -1;
         public int Table_Group_Offset { get; set; }
         public int Table_Group_Max { get; set; }
-        [MaxLength(30)]
-        public string Table_Assosiations { get; set; }
+
+        public int Table_Assosiations { get; set; } = -1;
         public int Table_Assosiations_Offset { get; set; }
         public int Table_Assosiations_Max { get; set; }
+
         public LoadProcedureTypes LoadProcedure { get; set; }
 
 

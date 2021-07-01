@@ -18,9 +18,12 @@ namespace Kaenx.DataContext.Migrations
 
             modelBuilder.Entity("Kaenx.DataContext.Catalog.AppAdditional", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(255);
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<byte[]>("Assignments")
                         .HasColumnType("BLOB");
@@ -53,20 +56,18 @@ namespace Kaenx.DataContext.Migrations
 
             modelBuilder.Entity("Kaenx.DataContext.Catalog.AppComObject", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(255);
+                    b.Property<int>("UId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
-                    b.Property<string>("ApplicationId")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(100);
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("BindedDefaultText")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("BindedId")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(255);
+                    b.Property<int>("BindedId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Datapoint")
                         .HasColumnType("INTEGER");
@@ -99,6 +100,9 @@ namespace Kaenx.DataContext.Migrations
                     b.Property<string>("Group")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Id")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Number")
                         .HasColumnType("INTEGER");
 
@@ -109,23 +113,26 @@ namespace Kaenx.DataContext.Migrations
                         .HasColumnType("TEXT")
                         .HasMaxLength(100);
 
-                    b.HasKey("Id");
+                    b.HasKey("UId");
 
                     b.ToTable("AppComObjects");
                 });
 
             modelBuilder.Entity("Kaenx.DataContext.Catalog.AppParameter", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(255);
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Access")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ApplicationId")
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Hash")
                         .HasColumnType("TEXT")
-                        .HasMaxLength(100);
+                        .HasMaxLength(40);
 
                     b.Property<int>("Offset")
                         .HasColumnType("INTEGER");
@@ -133,13 +140,14 @@ namespace Kaenx.DataContext.Migrations
                     b.Property<int>("OffsetBit")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ParameterTypeId")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(100);
+                    b.Property<int>("ParameterId")
+                        .HasColumnType("INTEGER");
 
-                    b.Property<string>("SegmentId")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(100);
+                    b.Property<int>("ParameterTypeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SegmentId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("SegmentType")
                         .HasColumnType("INTEGER");
@@ -167,20 +175,22 @@ namespace Kaenx.DataContext.Migrations
 
             modelBuilder.Entity("Kaenx.DataContext.Catalog.AppParameterTypeEnumViewModel", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(255);
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Order")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ParameterId")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(100);
+                    b.Property<int>("ParameterId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Text")
                         .HasColumnType("TEXT")
                         .HasMaxLength(100);
+
+                    b.Property<int>("TypeId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Value")
                         .HasColumnType("TEXT")
@@ -193,12 +203,16 @@ namespace Kaenx.DataContext.Migrations
 
             modelBuilder.Entity("Kaenx.DataContext.Catalog.AppParameterTypeViewModel", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(255);
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
-                    b.Property<string>("ApplicationId")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT")
+                        .HasMaxLength(70);
 
                     b.Property<int>("Size")
                         .HasColumnType("INTEGER");
@@ -221,15 +235,15 @@ namespace Kaenx.DataContext.Migrations
 
             modelBuilder.Entity("Kaenx.DataContext.Catalog.AppSegmentViewModel", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(255);
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Address")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ApplicationId")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Data")
                         .HasColumnType("TEXT");
@@ -243,6 +257,9 @@ namespace Kaenx.DataContext.Migrations
                     b.Property<int>("Offset")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("SegmentId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Size")
                         .HasColumnType("INTEGER");
 
@@ -253,9 +270,16 @@ namespace Kaenx.DataContext.Migrations
 
             modelBuilder.Entity("Kaenx.DataContext.Catalog.ApplicationViewModel", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("HardwareId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Hash")
                         .HasColumnType("TEXT")
-                        .HasMaxLength(255);
+                        .HasMaxLength(40);
 
                     b.Property<bool>("IsRelativeSegment")
                         .HasColumnType("INTEGER");
@@ -277,9 +301,8 @@ namespace Kaenx.DataContext.Migrations
                     b.Property<int>("Number")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Table_Assosiations")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(40);
+                    b.Property<int>("Table_Assosiations")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Table_Assosiations_Max")
                         .HasColumnType("INTEGER");
@@ -287,9 +310,8 @@ namespace Kaenx.DataContext.Migrations
                     b.Property<int>("Table_Assosiations_Offset")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Table_Group")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(40);
+                    b.Property<int>("Table_Group")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Table_Group_Max")
                         .HasColumnType("INTEGER");
@@ -297,9 +319,8 @@ namespace Kaenx.DataContext.Migrations
                     b.Property<int>("Table_Group_Offset")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Table_Object")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(40);
+                    b.Property<int>("Table_Object")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Table_Object_Offset")
                         .HasColumnType("INTEGER");
@@ -314,17 +335,23 @@ namespace Kaenx.DataContext.Migrations
 
             modelBuilder.Entity("Kaenx.DataContext.Catalog.CatalogViewModel", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ImportType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Key")
                         .HasColumnType("TEXT")
-                        .HasMaxLength(255);
+                        .HasMaxLength(100);
 
                     b.Property<string>("Name")
                         .HasColumnType("TEXT")
                         .HasMaxLength(100);
 
-                    b.Property<string>("ParentId")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(100);
+                    b.Property<int>("ParentId")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -333,25 +360,26 @@ namespace Kaenx.DataContext.Migrations
 
             modelBuilder.Entity("Kaenx.DataContext.Catalog.DeviceViewModel", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(255);
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("BusCurrent")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("CatalogId")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(100);
+                    b.Property<int>("CatalogId")
+                        .HasColumnType("INTEGER");
 
-                    b.Property<string>("HardwareId")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(100);
+                    b.Property<int>("HardwareId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("HasApplicationProgram")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("HasIndividualAddress")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ImportType")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsCoupler")
@@ -363,9 +391,12 @@ namespace Kaenx.DataContext.Migrations
                     b.Property<bool>("IsRailMounted")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ManufacturerId")
+                    b.Property<string>("Key")
                         .HasColumnType("TEXT")
-                        .HasMaxLength(7);
+                        .HasMaxLength(100);
+
+                    b.Property<int>("ManufacturerId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
                         .HasColumnType("TEXT")
@@ -388,14 +419,16 @@ namespace Kaenx.DataContext.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasMaxLength(255);
+                        .HasColumnType("INTEGER");
 
-                    b.Property<string>("ApplicationId")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("INTEGER");
 
-                    b.Property<string>("HardwareId")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("ApplicationVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ManuId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
                         .HasColumnType("TEXT")
@@ -410,6 +443,27 @@ namespace Kaenx.DataContext.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Hardware2App");
+                });
+
+            modelBuilder.Entity("Kaenx.DataContext.Catalog.ManufacturerViewModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ImportType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ManuId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT")
+                        .HasMaxLength(100);
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Manufacturers");
                 });
 #pragma warning restore 612, 618
         }

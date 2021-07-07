@@ -21,7 +21,7 @@ namespace Kaenx.DataContext.Catalog
         [MaxLength(40)]
         public string Hash { get; set; }
 
-        public int SegmentId { get; set; }
+        public int SegmentId { get; set; } = -1;
         public SegmentTypes SegmentType { get; set; }
         public int UnionId { get; set; }
         public bool UnionDefault { get; set; }

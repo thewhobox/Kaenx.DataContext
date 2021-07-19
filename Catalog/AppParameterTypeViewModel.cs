@@ -10,10 +10,10 @@ namespace Kaenx.DataContext.Catalog
     public class AppParameterTypeViewModel
     {
         [Key]
-        [MaxLength(255)]
-        public string Id { get; set; }
-        [MaxLength(18)]
-        public string ApplicationId { get; set; }
+        public int Id { get; set; }
+        [MaxLength(70)]
+        public string Name { get; set; }
+        public int ApplicationId { get; set; }
         public ParamTypes Type { get; set; }
         public int Size { get; set; }
         [MaxLength(100)]

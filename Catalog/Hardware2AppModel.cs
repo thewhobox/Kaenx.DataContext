@@ -9,10 +9,9 @@ namespace Kaenx.DataContext.Catalog
     {
         [Key]
         public int Id { get; set; }
-        [MaxLength(100)]
-        public string HardwareId { get; set; }
-        [MaxLength(18)]
-        public string ApplicationId { get; set; }
+        public int ManuId { get; set; }
+        public int ApplicationId { get; set; }
+        public int ApplicationVersion { get; set; }
         [MaxLength(100)]
         public string Name { get; set; }
         public int Version { get; set; }

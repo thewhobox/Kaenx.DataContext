@@ -10,19 +10,18 @@ namespace Kaenx.DataContext.Catalog
     public class AppParameter
     {
         [Key]
-        [MaxLength(255)]
-        public string Id { get; set; }
-        [MaxLength(255)]
-        public string ParameterTypeId { get; set; }
-        [MaxLength(18)]
-        public string ApplicationId { get; set; }
+        public int Id { get; set; }
+        public int ParameterId { get; set; }
+        public int ParameterTypeId { get; set; }
+        public int ApplicationId { get; set; }
         public string Text { get; set; }
         [MaxLength(20)]
         public string SuffixText { get; set; }
         public string Value { get; set; }
+        [MaxLength(40)]
+        public string Hash { get; set; }
 
-        [MaxLength(30)]
-        public string SegmentId { get; set; }
+        public int SegmentId { get; set; } = -1;
         public SegmentTypes SegmentType { get; set; }
         public int UnionId { get; set; }
         public bool UnionDefault { get; set; }

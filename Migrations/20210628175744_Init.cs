@@ -8,32 +8,20 @@ namespace Kaenx.DataContext.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "AppSegments",
-                columns: table => new
-                {
-                    Id = table.Column<string>(maxLength: 255, nullable: false),
-                    ApplicationId = table.Column<string>(nullable: true),
-                    Address = table.Column<int>(nullable: false),
-                    Size = table.Column<int>(nullable: false),
-                    Data = table.Column<string>(nullable: true),
-                    Mask = table.Column<string>(nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AppSegments", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AppAdditionals",
                 columns: table => new
                 {
-                    Id = table.Column<string>(maxLength: 255, nullable: false),
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    ApplicationId = table.Column<int>(nullable: false),
                     LoadProcedures = table.Column<byte[]>(nullable: true),
                     Dynamic = table.Column<byte[]>(nullable: true),
+                    Bindings = table.Column<byte[]>(nullable: true),
                     ParameterAll = table.Column<byte[]>(nullable: true),
-                    ParameterDefault = table.Column<byte[]>(nullable: true),
                     ComsAll = table.Column<byte[]>(nullable: true),
-                    ComsDefault = table.Column<byte[]>(nullable: true)
+                    ComsDefault = table.Column<byte[]>(nullable: true),
+                    ParamsHelper = table.Column<byte[]>(nullable: true),
+                    Assignments = table.Column<byte[]>(nullable: true)
                 },
                 constraints: table =>
                 {
@@ -44,16 +32,21 @@ namespace Kaenx.DataContext.Migrations
                 name: "AppComObjects",
                 columns: table => new
                 {
-                    Id = table.Column<string>(maxLength: 255, nullable: false),
-                    ApplicationId = table.Column<string>(maxLength: 100, nullable: true),
-                    Text = table.Column<string>(maxLength: 100, nullable: false),
-                    FunctionText = table.Column<string>(maxLength: 100, nullable: false),
+                    UId = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Id = table.Column<int>(nullable: false),
+                    BindedId = table.Column<int>(nullable: false),
+                    BindedDefaultText = table.Column<string>(nullable: true),
+                    ApplicationId = table.Column<int>(nullable: false),
+                    Text = table.Column<string>(maxLength: 100, nullable: true),
+                    FunctionText = table.Column<string>(maxLength: 100, nullable: true),
                     Flag_Read = table.Column<bool>(nullable: false),
                     Flag_Write = table.Column<bool>(nullable: false),
                     Flag_Communicate = table.Column<bool>(nullable: false),
                     Flag_Transmit = table.Column<bool>(nullable: false),
                     Flag_Update = table.Column<bool>(nullable: false),
                     Flag_ReadOnInit = table.Column<bool>(nullable: false),
+                    Group = table.Column<string>(nullable: true),
                     Number = table.Column<int>(nullable: false),
                     Size = table.Column<int>(nullable: false),
                     Datapoint = table.Column<int>(nullable: false),
@@ -61,27 +54,32 @@ namespace Kaenx.DataContext.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AppComObjects", x => x.Id);
+                    table.PrimaryKey("PK_AppComObjects", x => x.UId);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Applications",
                 columns: table => new
                 {
-                    Id = table.Column<string>(maxLength: 255, nullable: false),
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Hash = table.Column<string>(maxLength: 40, nullable: true),
                     Name = table.Column<string>(maxLength: 100, nullable: true),
+                    HardwareId = table.Column<int>(nullable: false),
                     Version = table.Column<int>(nullable: false),
                     Number = table.Column<int>(nullable: false),
                     Mask = table.Column<string>(maxLength: 7, nullable: true),
                     Manufacturer = table.Column<int>(nullable: false),
-                    Table_Object = table.Column<string>(maxLength: 40, nullable: true),
+                    IsRelativeSegment = table.Column<bool>(nullable: false),
+                    Table_Object = table.Column<int>(nullable: false),
                     Table_Object_Offset = table.Column<int>(nullable: false),
-                    Table_Group = table.Column<string>(maxLength: 40, nullable: true),
+                    Table_Group = table.Column<int>(nullable: false),
                     Table_Group_Offset = table.Column<int>(nullable: false),
                     Table_Group_Max = table.Column<int>(nullable: false),
-                    Table_Assosiations = table.Column<string>(maxLength: 40, nullable: true),
+                    Table_Assosiations = table.Column<int>(nullable: false),
                     Table_Assosiations_Offset = table.Column<int>(nullable: false),
-                    Table_Assosiations_Max = table.Column<int>(nullable: false)
+                    Table_Assosiations_Max = table.Column<int>(nullable: false),
+                    LoadProcedure = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -92,13 +90,19 @@ namespace Kaenx.DataContext.Migrations
                 name: "AppParameters",
                 columns: table => new
                 {
-                    Id = table.Column<string>(maxLength: 255, nullable: false),
-                    ParameterTypeId = table.Column<string>(maxLength: 100, nullable: true),
-                    ApplicationId = table.Column<string>(maxLength: 100, nullable: true),
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    ParameterId = table.Column<int>(nullable: false),
+                    ParameterTypeId = table.Column<int>(nullable: false),
+                    ApplicationId = table.Column<int>(nullable: false),
                     Text = table.Column<string>(nullable: true),
+                    SuffixText = table.Column<string>(maxLength: 20, nullable: true),
                     Value = table.Column<string>(nullable: true),
-                    SegmentId = table.Column<string>(maxLength: 100, nullable: true),
+                    Hash = table.Column<string>(maxLength: 40, nullable: true),
+                    SegmentId = table.Column<int>(nullable: false),
                     SegmentType = table.Column<int>(nullable: false),
+                    UnionId = table.Column<int>(nullable: false),
+                    UnionDefault = table.Column<bool>(nullable: false),
                     Offset = table.Column<int>(nullable: false),
                     OffsetBit = table.Column<int>(nullable: false),
                     Access = table.Column<int>(nullable: false)
@@ -112,8 +116,10 @@ namespace Kaenx.DataContext.Migrations
                 name: "AppParameterTypeEnums",
                 columns: table => new
                 {
-                    Id = table.Column<string>(maxLength: 255, nullable: false),
-                    ParameterId = table.Column<string>(maxLength: 100, nullable: true),
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    TypeId = table.Column<int>(nullable: false),
+                    ParameterId = table.Column<int>(nullable: false),
                     Text = table.Column<string>(maxLength: 100, nullable: true),
                     Value = table.Column<string>(maxLength: 100, nullable: true),
                     Order = table.Column<int>(nullable: false)
@@ -127,7 +133,10 @@ namespace Kaenx.DataContext.Migrations
                 name: "AppParameterTypes",
                 columns: table => new
                 {
-                    Id = table.Column<string>(maxLength: 255, nullable: false),
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(maxLength: 70, nullable: true),
+                    ApplicationId = table.Column<int>(nullable: false),
                     Type = table.Column<int>(nullable: false),
                     Size = table.Column<int>(nullable: false),
                     Tag1 = table.Column<string>(maxLength: 100, nullable: true),
@@ -139,11 +148,34 @@ namespace Kaenx.DataContext.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AppSegments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    SegmentId = table.Column<int>(nullable: false),
+                    ApplicationId = table.Column<int>(nullable: false),
+                    Address = table.Column<int>(nullable: false),
+                    Size = table.Column<int>(nullable: false),
+                    Offset = table.Column<int>(nullable: false),
+                    LsmId = table.Column<int>(nullable: false),
+                    Data = table.Column<string>(nullable: true),
+                    Mask = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AppSegments", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Devices",
                 columns: table => new
                 {
-                    Id = table.Column<string>(maxLength: 255, nullable: false),
-                    ManufacturerId = table.Column<string>(maxLength: 7, nullable: true),
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    ImportType = table.Column<int>(nullable: false),
+                    ManufacturerId = table.Column<int>(nullable: false),
+                    Key = table.Column<string>(maxLength: 100, nullable: true),
                     Name = table.Column<string>(maxLength: 100, nullable: true),
                     VisibleDescription = table.Column<string>(maxLength: 300, nullable: true),
                     OrderNumber = table.Column<string>(maxLength: 100, nullable: true),
@@ -153,8 +185,8 @@ namespace Kaenx.DataContext.Migrations
                     IsRailMounted = table.Column<bool>(nullable: false),
                     IsCoupler = table.Column<bool>(nullable: false),
                     BusCurrent = table.Column<int>(nullable: false),
-                    CatalogId = table.Column<string>(maxLength: 100, nullable: true),
-                    HardwareId = table.Column<string>(maxLength: 100, nullable: true)
+                    CatalogId = table.Column<int>(nullable: false),
+                    HardwareId = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -165,10 +197,11 @@ namespace Kaenx.DataContext.Migrations
                 name: "Hardware2App",
                 columns: table => new
                 {
-                    Id = table.Column<int>(maxLength: 255, nullable: false)
+                    Id = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    HardwareId = table.Column<string>(nullable: true),
-                    ApplicationId = table.Column<string>(nullable: true),
+                    ManuId = table.Column<int>(nullable: false),
+                    ApplicationId = table.Column<int>(nullable: false),
+                    ApplicationVersion = table.Column<int>(nullable: false),
                     Name = table.Column<string>(maxLength: 100, nullable: true),
                     Version = table.Column<int>(nullable: false),
                     Number = table.Column<int>(nullable: false)
@@ -179,11 +212,29 @@ namespace Kaenx.DataContext.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Manufacturers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    ManuId = table.Column<int>(nullable: false),
+                    ImportType = table.Column<int>(nullable: false),
+                    Name = table.Column<string>(maxLength: 100, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Manufacturers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Sections",
                 columns: table => new
                 {
-                    Id = table.Column<string>(maxLength: 255, nullable: false),
-                    ParentId = table.Column<string>(maxLength: 100, nullable: true),
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Key = table.Column<string>(maxLength: 100, nullable: true),
+                    ImportType = table.Column<int>(nullable: false),
+                    ParentId = table.Column<int>(nullable: false),
                     Name = table.Column<string>(maxLength: 100, nullable: true)
                 },
                 constraints: table =>
@@ -194,9 +245,6 @@ namespace Kaenx.DataContext.Migrations
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "AppSegments");
-
             migrationBuilder.DropTable(
                 name: "AppAdditionals");
 
@@ -216,10 +264,16 @@ namespace Kaenx.DataContext.Migrations
                 name: "AppParameterTypes");
 
             migrationBuilder.DropTable(
+                name: "AppSegments");
+
+            migrationBuilder.DropTable(
                 name: "Devices");
 
             migrationBuilder.DropTable(
                 name: "Hardware2App");
+
+            migrationBuilder.DropTable(
+                name: "Manufacturers");
 
             migrationBuilder.DropTable(
                 name: "Sections");

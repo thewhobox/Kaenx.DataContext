@@ -10,13 +10,11 @@ namespace Kaenx.DataContext.Catalog
     public class AppComObject
     {
         [Key]
-        [MaxLength(30)]
-        public string Id { get; set; }
-        [MaxLength(30)]
-        public string BindedId { get; set; }
+        public int UId { get; set; }
+        public int Id { get; set; }
+        public int BindedId { get; set; } = -2;
         public string BindedDefaultText { get; set; }
-        [MaxLength(18)]
-        public string ApplicationId { get; set; }
+        public int ApplicationId { get; set; }
 
         [MaxLength(100)]
         public string Text { get; set; }

@@ -10,10 +10,9 @@ namespace Kaenx.DataContext.Catalog
     public class AppSegmentViewModel
     {
         [Key]
-        [MaxLength(30)]
-        public string Id { get; set; }
-        [MaxLength(18)]
-        public string ApplicationId { get; set; }
+        public int Id { get; set; }
+        public int SegmentId { get; set; }
+        public int ApplicationId { get; set; }
         public int Address { get; set; }
         public int Size { get; set; }
         public int Offset { get; set; } = 0;

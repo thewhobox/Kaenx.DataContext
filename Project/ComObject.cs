@@ -9,7 +9,7 @@ namespace Kaenx.DataContext.Project
     {
         [Key]
         public int Id { get; set; }
-        public string ComId { get; set; }
+        public int ComId { get; set; }
         public int DeviceId { get; set; }
         public string Groups { get; set; }
     }

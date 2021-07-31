@@ -6,10 +6,10 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace Kaenx.DataContext.Migrations
+namespace Kaenx.DataContext.Migrations.Catalog
 {
     [DbContext(typeof(CatalogContext))]
-    [Migration("20210628175744_Init")]
+    [Migration("20210726145017_Init")]
     partial class Init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -421,12 +421,6 @@ namespace Kaenx.DataContext.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("ApplicationId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("ApplicationVersion")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("ManuId")

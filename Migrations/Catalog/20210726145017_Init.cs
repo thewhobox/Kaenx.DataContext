@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace Kaenx.DataContext.Migrations
+namespace Kaenx.DataContext.Migrations.Catalog
 {
     public partial class Init : Migration
     {
@@ -200,8 +200,6 @@ namespace Kaenx.DataContext.Migrations
                     Id = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     ManuId = table.Column<int>(nullable: false),
-                    ApplicationId = table.Column<int>(nullable: false),
-                    ApplicationVersion = table.Column<int>(nullable: false),
                     Name = table.Column<string>(maxLength: 100, nullable: true),
                     Version = table.Column<int>(nullable: false),
                     Number = table.Column<int>(nullable: false)

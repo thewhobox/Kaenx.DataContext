@@ -9,15 +9,16 @@ namespace Kaenx.Import.Dynamic
 {
     public interface IDynChannel
     {
-        public int Id { get; set; }
+        //TODO set public
+        int Id { get; set; }
         [JsonProperty("ha")]
-        public bool HasAccess { get; set; }
+        bool HasAccess { get; set; }
         [JsonProperty("bl")]
-        public List<ParameterBlock> Blocks { get; set; }
+        List<ParameterBlock> Blocks { get; set; }
         [JsonProperty("vi")]
-        public bool IsVisible { get; set; }
+        bool IsVisible { get; set; }
 
         [JsonProperty("co")]
-        public List<ParamCondition> Conditions { get; set; }
+        List<ParamCondition> Conditions { get; set; }
     }
 }

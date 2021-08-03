@@ -1,4 +1,5 @@
 ﻿using Kaenx.DataContext.Catalog;
+using Kaenx.Import.Dynamic;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -103,6 +104,8 @@ namespace Kaenx.DataContext.Import.Manager
                         hardwareId = hard.Id;
                     }
 
+                    //TODO add Application
+
 
                     DeviceViewModel model = new DeviceViewModel();
                     model.Name = xdevice.Element(GetXName("DeviceName")).Value;
@@ -118,12 +121,62 @@ namespace Kaenx.DataContext.Import.Manager
                     AppAdditional adds = new AppAdditional();
 
                     List<IDynChannel> Channels = new List<IDynChannel>();
+                    ChannelIndependentBlock channel = new ChannelIndependentBlock();
+                    Channels.Add(channel);
+
 
                     OnStateChanged("Parameter");
 
                     foreach(XElement group in xdevice.Element(GetXName("Parameters")).Elements(GetXName("ParameterGroup")))
                     {
+                        ParameterBlock block = new ParameterBlock();
+                        block.DisplayText = group.Attribute("Name").Value;
 
+                        foreach(XElement xpara in group.Elements())
+                        {
+                            //TODO check if para exists
+                            AppParameter para = new AppParameter();
+                            para.Access = AccessType.Full;
+                            para.ParameterId = int.Parse(xpara.Attribute("Id").Value);
+                            para.Text = xpara.Element(GetXName("Description")).Value;
+
+                            XElement xvalue = xpara.Element(GetXName("Value"));
+                            para.Value = HexToString(xvalue.Attribute("Default").Value);
+
+                            if (xvalue.Attribute("Options").Value.Contains("|"))
+                            {
+                                string[] options = xvalue.Attribute("Options").Value.Split('|');
+
+                                if(options.Length == 2)
+                                {
+                                    para.ParameterTypeId = -1; //TODO add ParamTypes
+
+                                    ParamEnumTwo pet = new ParamEnumTwo() { Text = para.Text };
+                                    string[] opt1 = options[0].Split('=');
+                                    pet.Option1 = new ParamEnumOption() { Text = opt1[1], Value = HexToString(opt1[0]) };
+                                    string[] opt2 = options[1].Split('=');
+                                    pet.Option2 = new ParamEnumOption() { Text = opt2[1], Value = HexToString(opt2[0]) };
+                                    block.Parameters.Add(pet);
+                                } else
+                                {
+                                    para.ParameterTypeId = -1;
+
+                                    ParamEnum pe = new ParamEnum() { Text = para.Text };
+                                    foreach (string option in xvalue.Attribute("Options").Value.Split('|'))
+                                    {
+                                        string[] opts = option.Split('=');
+                                        ParamEnumOption opt = new ParamEnumOption();
+                                        opt.Text = opts[1];
+                                        opt.Value = HexToString(opts[0]);
+                                        pe.Options.Add(opt);
+                                    }
+                                    block.Parameters.Add(pe);
+                                }
+                            }
+                        }
+
+
+                        channel.Blocks.Add(block);
                     }
 
                 }
@@ -133,6 +186,11 @@ namespace Kaenx.DataContext.Import.Manager
 
             OnDeviceNameChanged("Fertig");
             OnStateChanged("Abgeschlossen");
+        }
+
+        private string HexToString(string input)
+        {
+            return int.Parse(input, System.Globalization.NumberStyles.HexNumber).ToString();
         }
 
         private XName GetXName(string name)

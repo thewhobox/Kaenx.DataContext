@@ -10,27 +10,28 @@ namespace Kaenx.Import.Dynamic
 {
     public interface IDynParameter: INotifyPropertyChanged
     {
+        //TODO set public
         [JsonProperty("i")]
-        public int Id { get; set; }
+        int Id { get; set; }
         [JsonProperty("t")]
-        public string Text { get; set; }
+        string Text { get; set; }
         [JsonProperty("h")]
-        public string Hash { get; set; }
+        string Hash { get; set; }
         [JsonProperty("s")]
-        public string SuffixText { get; set; }
+        string SuffixText { get; set; }
         [JsonProperty("v")]
-        public string Value { get; set; }
+        string Value { get; set; }
 
         [JsonProperty("d")]
-        public string Default { get; set; }
+        string Default { get; set; }
 
         [JsonProperty("a")]
-        public bool HasAccess { get; set; }
+        bool HasAccess { get; set; }
         [JsonProperty("e")]
-        public bool IsEnabled { get; set; }
+        bool IsEnabled { get; set; }
         [JsonProperty("vi")]
-        public bool IsVisible { get; set; }
+        bool IsVisible { get; set; }
         [JsonProperty("c")]
-        public List<ParamCondition> Conditions { get; set; }
+        List<ParamCondition> Conditions { get; set; }
     }
 }

@@ -32,7 +32,7 @@ namespace Kaenx.Import.Dynamic
 
         public bool HasAccess { get; set; }
         [JsonProperty("o")]
-        public List<ParamEnumOption> Options { get; set; }
+        public List<ParamEnumOption> Options { get; set; } = new List<ParamEnumOption>();
         public bool IsEnabled { get; set; } = true;
         public List<ParamCondition> Conditions { get; set; }
         public event PropertyChangedEventHandler PropertyChanged;

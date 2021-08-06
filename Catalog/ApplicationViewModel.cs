@@ -54,6 +54,7 @@ namespace Kaenx.DataContext.Catalog
         Unknown,
         Default,
         Product,
-        Merge
+        Merge,
+        Konnekting
     }
 }

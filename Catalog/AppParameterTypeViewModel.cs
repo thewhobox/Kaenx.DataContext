@@ -34,6 +34,7 @@ namespace Kaenx.DataContext.Catalog
         IpAdress,
         Color,
         CheckBox,
-        Time
+        Time,
+        NumberHex
     }
 }

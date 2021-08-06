@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Kaenx.Import.Dynamic
+namespace Kaenx.DataContext.Import.Dynamic
 {
     public class ParamText : IDynParameter
     {
@@ -26,7 +26,7 @@ namespace Kaenx.Import.Dynamic
         public bool IsVisible
         {
             get { return _isVisible; }
-            set { _isVisible = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("UsVisible")); }
+            set { _isVisible = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("IsVisible")); }
         }
 
         public int MaxLength { get; set; }

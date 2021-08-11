@@ -374,7 +374,8 @@ namespace Kaenx.DataContext.Import.Manager
         private List<ParamCondition> GenerateConditions(int paramId, XElement xdevice, string type, string attr) {
             List<ParamCondition> conds = new List<ParamCondition>();
 
-            var paramDependencies = xdevice.Element(GetXName("Dependencies")).Elements(GetXName(type + "Dependency")).Where(d => d.Attribute(attr + "Id").Value == paramId.ToString());
+            var paramDependencies = xdevice.Element(GetXName("Dependencies"))?.Elements(GetXName(type + "Dependency")).Where(d => d.Attribute(attr + "Id").Value == paramId.ToString());
+            if(paramDependencies == null) return conds;
 
             foreach(XElement dep in paramDependencies){
                 ParamCondition cond = new ParamCondition();

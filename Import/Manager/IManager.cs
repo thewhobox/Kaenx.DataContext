@@ -7,10 +7,10 @@ namespace Kaenx.DataContext.Import.Manager
 {
     public abstract class IManager : IDisposable
     {
-        public string _lanugage { get; set; } = "de-de";
+        public string _language { get; set; } = "de-de";
         public string _path { get; set; }
 
-        public delegate void ProcessChangedHandler(int percentage);
+        public delegate void ProcessChangedHandler(double percentage);
         public delegate void DeviceNameChanged(string newName);
 
         public event ProcessChangedHandler ProcessChanged;
@@ -37,7 +37,7 @@ namespace Kaenx.DataContext.Import.Manager
         /// <param name="lang"></param>
         public void SetLanguage(string lang)
         {
-            _lanugage = lang;
+            _language = lang;
         }
 
         /// <summary>
@@ -53,11 +53,11 @@ namespace Kaenx.DataContext.Import.Manager
         public abstract List<ImportDevice> GetDeviceList();
 
 
-        public void StartImport(string id, CatalogContext context)
+        public void StartImport(ImportDevice device, CatalogContext context)
         {
-            StartImport(new List<string>() { id }, context);
+            StartImport(new List<ImportDevice>() { device }, context);
         }
-        public abstract void StartImport(List<string> ids, CatalogContext context);
+        public abstract void StartImport(List<ImportDevice> devices, CatalogContext context);
 
         public abstract void Dispose();
 
@@ -70,6 +70,11 @@ namespace Kaenx.DataContext.Import.Manager
         public void OnStateChanged(string name)
         {
             StateChanged?.Invoke(name);
+        }
+
+        public void OnProgressChanged(double percentage)
+        {
+            ProcessChanged?.Invoke(percentage);
         }
     }
 }

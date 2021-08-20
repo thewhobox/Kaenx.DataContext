@@ -13,7 +13,8 @@ namespace Kaenx.DataContext.Catalog
         [MaxLength(100)]
         public string Name { get; set; }
         public int Version { get; set; }
-        public int Number { get; set; }
+        [MaxLength(30)]
+        public string Number { get; set; }
 
 
         public string VersionString

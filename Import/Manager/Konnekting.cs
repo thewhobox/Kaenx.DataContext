@@ -57,7 +57,7 @@ namespace Kaenx.DataContext.Import.Manager
             return devices;
         }
 
-        public override void StartImport(List<string> ids, CatalogContext context)
+        public override void StartImport(List<ImportDevice> ids, CatalogContext context)
         {
             _context = context;
             XElement devices = kDevice.Element(GetXName("Device")).Element(GetXName("Parameters"));
@@ -81,12 +81,12 @@ namespace Kaenx.DataContext.Import.Manager
                     manuId = manu.Id;
                 }
 
-                if (ids.Contains(xdevice.Attribute("DeviceId").Value))
+                if (ids.Any(id => id.Id == xdevice.Attribute("DeviceId").Value))
                 {
                     OnDeviceNameChanged(xdevice.Element(GetXName("DeviceName")).Value);
                     OnStateChanged("Allgemeine Infos");
 
-                    int hardNumber = int.Parse(xdevice.Attribute("DeviceId").Value);
+                    string hardNumber = xdevice.Attribute("DeviceId").Value;
                     int hardVersion = int.Parse(xdevice.Attribute("Revision").Value);
                     bool sectionExists = context.Sections.Any(s => s.ParentId == -1 && s.ImportType == ImportTypes.Konnekting && s.Name == manuName);
                     bool hardwareExists = context.Hardware2App.Any(s => s.ManuId == manuId && s.Number == hardNumber && s.Version == hardVersion);
@@ -139,7 +139,7 @@ namespace Kaenx.DataContext.Import.Manager
                         app.HardwareId = hardwareId;
                         app.Manufacturer = manuId;
                         app.LoadProcedure = LoadProcedureTypes.Konnekting;
-                        app.Number = hardNumber;
+                        app.Number = int.Parse(hardNumber);
                         app.Version = hardVersion;
                         context.Applications.Add(app);
                         context.SaveChanges();

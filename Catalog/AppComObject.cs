@@ -38,7 +38,7 @@ namespace Kaenx.DataContext.Catalog
         {
             Id = com.Id;
             BindedId = com.BindedId;
-            Group = com.Group;
+            BindedDefaultText = com.BindedDefaultText;
             ApplicationId = com.ApplicationId;
             Text = com.Text;
             FunctionText = com.FunctionText;
@@ -47,6 +47,8 @@ namespace Kaenx.DataContext.Catalog
             Flag_Communicate = com.Flag_Communicate;
             Flag_Transmit = com.Flag_Transmit;
             Flag_Update = com.Flag_Update;
+            Flag_ReadOnInit = com.Flag_ReadOnInit;
+            Group = com.Group;
             Number = com.Number;
             Size = com.Size;
             Datapoint = com.Datapoint;
@@ -55,7 +57,7 @@ namespace Kaenx.DataContext.Catalog
 
         public void SetSize(string size)
         {
-            if (size == null)
+            if (string.IsNullOrEmpty(size))
             {
                 Size = -1;
                 return;
@@ -68,7 +70,7 @@ namespace Kaenx.DataContext.Catalog
 
         public void SetDatapoint(string dp)
         {
-            if (dp == null)
+            if (string.IsNullOrEmpty(dp))
             {
                 Datapoint = -1;
                 DatapointSub = -1;

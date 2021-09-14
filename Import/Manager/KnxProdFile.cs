@@ -258,11 +258,62 @@ namespace Kaenx.DataContext.Import.Manager
 
             ImportAppSegments(xapp, app.Id);
             ImportAppParaTypes(xapp, app.Id);
+
+            counterUnion = 1;
+            counterParameter = 1;
             ImportAppStatic(xapp.Element(GetXName("Static")), app.Id);
+
+            if(xapp.Element(GetXName("ModuleDefs")) != null) {
+                ImportModuleDefs(xapp, app.Id);
+            }
         }
 
 
-        private void ImportAppStatic(XElement xstatic, int appId, Dictionary<string, string> args = null) {
+        private void ImportModuleDefs(XElement xapp, int appId) {
+            Dictionary<string, KnxProdAllocators> allocs = new Dictionary<string, KnxProdAllocators>();
+
+            if(xapp.Element(GetXName("Static")).Element(GetXName("Allocators")) != null){
+                foreach(XElement xalloc in xapp.Element(GetXName("Static")).Element(GetXName("Allocators")).Elements()){
+                    KnxProdAllocators alloc = new KnxProdAllocators() {
+                        Index = int.Parse(xalloc.Attribute("Start").Value),
+                        Increase = int.Parse(xalloc.Attribute("maxInclusive").Value)
+                    };
+                    allocs.Add(xalloc.Attribute("Id").Value, alloc);
+                }
+            }
+
+            XElement xdyn = xapp.Element(GetXName("Dynamic"));
+            foreach(XElement xmod in xdyn.Descendants(GetXName("Module"))){
+                Dictionary<string, string> args = new Dictionary<string, string>();
+                foreach(XElement xarg in xmod.Elements()){
+                    if(xarg.Attribute("AllocatorRefId") != null){
+                        KnxProdAllocators alloc = allocs[xarg.Attribute("AllocatorRefId").Value];
+                        if(alloc.Started) {
+                            alloc.Index = alloc.Increase;
+                        }
+                        args.Add(xarg.Attribute("RefId").Value, alloc.Index.ToString());
+                    } else {
+                        args.Add(xarg.Attribute("RefId").Value, xarg.Attribute("Value")?.Value);
+                    }
+                }
+                    
+
+                XElement xdef = xapp.Descendants(GetXName("ModuleDef")).Single(md => md.Attribute("Id").Value == xmod.Attribute("RefId").Value);
+
+                foreach(XElement xarg in xdef.Element(GetXName("Arguments")).Elements()){
+                    if(xarg.Attribute("Name") != null) {
+                        string val = args[xarg.Attribute("Id").Value];
+                        args.Add(xarg.Attribute("Name").Value, val);
+                    }
+                }
+            
+                Dictionary<string, int> idMapper = ImportAppStatic(xdef.Element(GetXName("Static")), appId, args);
+            }
+        }
+
+
+
+        private Dictionary<string, int> ImportAppStatic(XElement xstatic, int appId, Dictionary<string, string> args = null) {
             if(args == null) OnStateChanged(appName + " - Parameter");
             Dictionary<string, int> idMapper = new Dictionary<string, int>(); //Mapping old Ids to new one if a ModuleDef is beeing used
 
@@ -270,8 +321,6 @@ namespace Kaenx.DataContext.Import.Manager
             if(xstatic.Element(GetXName("Parameters")) != null) {
                 Dictionary<int, AppParameter> parameters = new Dictionary<int, AppParameter>();
                 foreach(XElement xitem in xstatic.Element(GetXName("Parameters")).Elements()) {
-
-
                     if(xitem.Name.LocalName == "Union") {
                         XElement xmem = xitem.Element(GetXName("Memory"));
                         foreach(XElement xpara in xitem.Elements(GetXName("Parameter")))
@@ -283,7 +332,7 @@ namespace Kaenx.DataContext.Import.Manager
                         ParseParameter(parameters, args, xitem, xmem);
                     } else {
                         //TODO log
-                        throw new Exception("Kein bekannter Typ");
+                        throw new Exception("Kein bekannter Typ bei Parameters: " + xitem.Name.LocalName);
                     }
                 }
 
@@ -301,6 +350,7 @@ namespace Kaenx.DataContext.Import.Manager
 
 
             _context.SaveChanges();
+            return idMapper;
         }
 
         private void ParseComObjects(XElement xobjs, XElement xrefs, int appId, Dictionary<string, string> args, Dictionary<string, int> idMapper) {
@@ -373,7 +423,7 @@ namespace Kaenx.DataContext.Import.Manager
                             com.BindedId = idMapper["p" + com.BindedId];
                     }
                 }
-                if(reg.IsMatch(com.FunctionText)) {
+                if(com.FunctionText != null && reg.IsMatch(com.FunctionText)) {
                     //TODO maybe add binding for this too
                     Match match = reg.Match(com.FunctionText);
                     com.FunctionText = com.FunctionText.Replace("{{" + match.Groups[2].Value + "}}", args[match.Groups[2].Value]);
@@ -929,5 +979,14 @@ namespace Kaenx.DataContext.Import.Manager
         {
             Archive.Dispose();
         }
+    }
+
+
+
+
+    public class KnxProdAllocators {
+        public int Index {get;set;}
+        public int Increase {get;set;}
+        public bool Started {get;set;} = false;
     }
 }

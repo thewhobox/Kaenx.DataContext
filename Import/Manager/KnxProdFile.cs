@@ -19,6 +19,11 @@ namespace Kaenx.DataContext.Import.Manager
         private string currentNamespace {get;set;}
         private string appName {get;set;}
 
+        private List<ParamBinding> Bindings = new List<ParamBinding>();
+        private Dictionary<int, AppParameter> AppParas;
+        private Dictionary<int, AppParameterTypeViewModel> AppParaTypes;
+        private Dictionary<int, AppComObject> ComObjects;
+        private List<AssignParameter> Assignments;
         private Dictionary<string, int> parameterTypeIds;
         private int counterUnion = 1;
         private int counterParameter = 1;
@@ -304,235 +309,281 @@ namespace Kaenx.DataContext.Import.Manager
         private void ImportDynamic(XElement xdyn, int appId) {
             OnStateChanged(appName + " - Dynamic Ansicht");
 
-            Dictionary<string, XElement> Id2Element = new Dictionary<string, XElement>();
-            Dictionary<int, ParameterBlock> Id2ParamBlock = new Dictionary<int, ParameterBlock>();
+            Dictionary<string, IDynChannel> Id2Channel = new Dictionary<string, IDynChannel>();
+            Dictionary<string, ParameterBlock> Id2ParamBlock = new Dictionary<string, ParameterBlock>();
             List<IDynChannel> Channels = new List<IDynChannel>();
-            IDynChannel currentChannel = null;
 
-            foreach(XElement ele in xdyn.Descendants(GetXName("ParameterBlock")))
-            {
-                if(ele.Attribute("Inline")?.Value == "true") continue; //Tabellen überspringen
-                Id2Element.Add("pb" + GetItemId(ele.Attribute("Id").Value), ele);
-            }
-            foreach(XElement ele in xdyn.Descendants(GetXName("Channel")))
-            {
-                Id2Element.Add("ch" + GetItemId(ele.Attribute("Id").Value), ele);
-            }
 
-            using(XmlReader reader = xdyn.CreateReader()) {
-                while (reader.Read())
+
+            
+            foreach(XElement xele in xdyn.Descendants(GetXName("Channel")))
+            {
+                if(xele.Attribute("Text")?.Value == "")
                 {
-                    if (reader.NodeType == XmlNodeType.EndElement) continue;
-                    string text = "";
-
-                    switch (reader.LocalName)
+                    ChannelIndependentBlock cib2 = new ChannelIndependentBlock();
+                    if (xele.Attribute("Access")?.Value == "None")
                     {
-                        case "ChannelIndependentBlock":
-                            ChannelIndependentBlock cib = new ChannelIndependentBlock();
-                            if (reader.GetAttribute("Access") == "None")
-                            {
-                                cib.HasAccess = false;
-                                cib.IsVisible = false;
-                            }
-                            currentChannel = cib;
-                            Channels.Add(cib);
-                            break;
-
-                        case "Channel":
-                            if(reader.GetAttribute("Text") == "")
-                            {
-                                ChannelIndependentBlock cib2 = new ChannelIndependentBlock();
-                                if (reader.GetAttribute("Access") == "None")
-                                {
-                                    cib2.HasAccess = false;
-                                    cib2.IsVisible = false;
-                                }
-                                currentChannel = cib2;
-                                Channels.Add(cib2);
-                            } else
-                            {
-                                ChannelBlock cb = new ChannelBlock
-                                {
-                                    Id = GetItemId(reader.GetAttribute("Id")),
-                                    Name = reader.GetAttribute("Name")
-                                };
-                                if (reader.GetAttribute("Access") == "None")
-                                {
-                                    cb.HasAccess = false;
-                                    cb.IsVisible = false;
-                                }
-
-                                text = reader.GetAttribute("Text");
-
-                                if (text.Contains("{{"))
-                                {
-                                    ParamBinding bind = new ParamBinding()
-                                    {
-                                        Hash = "CB:" + cb.Id
-                                    };
-
-                                    Regex reg = new Regex("{{((.+):(.+))}}");
-                                    Match m = reg.Match(text);
-                                    if (m.Success)
-                                    {
-                                        bind.DefaultText = m.Groups[3].Value;
-                                        cb.DefaultText = m.Groups[3].Value;
-                                        cb.Text = text.Replace(m.Value, "{{dyn}}");
-                                        if (m.Groups[2].Value == "0")
-                                        {
-                                            string textId = reader.GetAttribute("TextParameterRefId");
-                                            if (string.IsNullOrEmpty(textId)) bind.SourceId = -1;
-                                            else
-                                            {
-                                                bind.SourceId = GetItemId(textId);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            string refid = m.Groups[2].Value;
-                                            bind.SourceId = int.Parse(m.Groups[2].Value);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        reg = new Regex("{{(.+)}}");
-                                        m = reg.Match(text);
-                                        if (m.Success)
-                                        {
-                                            bind.DefaultText = "";
-                                            cb.Text = text.Replace(m.Value, "{{dyn}}");
-                                            if (m.Groups[1].Value == "0")
-                                            {
-                                                string textId = reader.GetAttribute("TextParameterRefId");
-                                                if (string.IsNullOrEmpty(textId)) bind.SourceId = -1;
-                                                else
-                                                {
-                                                    bind.SourceId = GetItemId(textId);
-                                                }
-                                            }
-                                            else
-                                            {
-                                                string refid = m.Groups[2].Value;
-                                                bind.SourceId = int.Parse(m.Groups[2].Value);
-                                            }
-                                        }
-                                    }
-                                }
-                                else
-                                    cb.Text = text;
-
-                                cb.Conditions = GetConditions(Id2Element["ch" + cb.Id]);
-                                Channels.Add(cb);
-                                currentChannel = cb;
-                            }
-                            break;
-
-
-                        case "ParameterBlock":
-                            if(reader.GetAttribute("Inline") == "true") continue; //Tabellen überspringen
-
-                            ParameterBlock pb = new ParameterBlock { Id = GetItemId(reader.GetAttribute("Id")) };
-                            if (reader.GetAttribute("Access") == "None")
-                            {
-                                pb.HasAccess = false;
-                                pb.IsVisible = false;
-                            }
-                            if (reader.GetAttribute("ParamRefId") != null)
-                            {
-                                try
-                                {
-                                    int paramId = GetItemId(reader.GetAttribute("ParamRefId"));
-                                    AppParameter para = _context.AppParameters.Single(p => p.ParameterId == paramId && p.ApplicationId == appId);
-                                    text = para.Text;
-                                    if (para.Access == AccessType.None)
-                                    {
-                                        pb.HasAccess = false;
-                                        pb.IsVisible = false;
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    //Log.Error("Parameterblock TextRef Fehler!", ex);
-                                    throw new Exception("ParameterBlock TextRef Fehler", ex);
-                                }
-                            }
-                            else
-                                text = reader.GetAttribute("Text");
-
-                            if (text?.Contains("{{") == true)
-                            {
-                                ParamBinding bind = new ParamBinding()
-                                {
-                                    Hash = "PB:" + pb.Id
-                                };
-
-                                Regex reg = new Regex("{{((.+):(.+))}}");
-                                Match m = reg.Match(text);
-                                if (m.Success)
-                                {
-                                    bind.DefaultText = m.Groups[3].Value;
-                                    pb.DefaultText = m.Groups[3].Value;
-                                    pb.Text = text.Replace(m.Value, "{{dyn}}");
-                                    if (m.Groups[2].Value == "0")
-                                    {
-                                        string textId = reader.GetAttribute("TextParameterRefId");
-                                        if (string.IsNullOrEmpty(textId)) bind.SourceId = -1;
-                                        else
-                                        {
-                                            bind.SourceId = GetItemId(textId);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        bind.SourceId = int.Parse(m.Groups[2].Value);
-                                    }
-                                }
-                                else
-                                {
-                                    reg = new Regex("{{(.+)}}");
-                                    m = reg.Match(text);
-                                    if (m.Success)
-                                    {
-                                        bind.DefaultText = "";
-                                        pb.Text = text.Replace(m.Value, "{{dyn}}");
-                                        if (m.Groups[1].Value == "0")
-                                        {
-                                            string textId = reader.GetAttribute("TextParameterRefId");
-                                            if (string.IsNullOrEmpty(textId)) bind.SourceId = -1;
-                                            else
-                                            {
-                                                bind.SourceId = GetItemId(textId);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            bind.SourceId = int.Parse(m.Groups[1].Value);
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                                pb.Text = text;
-
-                            pb.Conditions = GetConditions(Id2Element["pb" + pb.Id]);
-                            currentChannel.Blocks.Add(pb);
-                            Id2ParamBlock.Add(pb.Id, pb);
-                            break;
-
-                        case "Assign":
-                        case "choose":
-                        case "when":
-                        case "Dynamic":
-                        case "ParameterRefRef":
-                        case "ParameterSeparator":
-                        case "ComObjectRefRef":
-                            break;
-
-                        default:
-                            //Log.Warning("Unbekanntes Element in Dynamic: " + reader.LocalName);
-                            System.Diagnostics.Debug.WriteLine("Unbekanntest Element in Dynamic: " + reader.LocalName);
-                            break;
+                        cib2.HasAccess = false;
+                        cib2.IsVisible = false;
                     }
+                    Channels.Add(cib2);
+                    Id2Channel.Add(GetAttributeAsString(xele, "Id"), cib2);
+                } else
+                {
+                    string text = "";
+                    ChannelBlock cb = new ChannelBlock
+                    {
+                        Id = GetItemId(GetAttributeAsString(xele, "Id")),
+                        Name = GetAttributeAsString(xele, "Name")
+                    };
+                    if (xele.Attribute("Access")?.Value == "None")
+                    {
+                        cb.HasAccess = false;
+                        cb.IsVisible = false;
+                    }
+
+                    text = GetAttributeAsString(xele, "Text");
+
+                    
+                    cb.Text = CheckForBindings(cb, text, xele);
+                    cb.Conditions = GetConditions(xele);
+                    Channels.Add(cb);
+                    Id2Channel.Add(GetAttributeAsString(xele, "Id"), cb);
+                }
+            }
+
+
+            int blockCounter = 1;
+            foreach(XElement xele in xdyn.Descendants(GetXName("ChannelIndependentBlock")))
+            {
+                ChannelIndependentBlock cib = new ChannelIndependentBlock();
+                if (xele.Attribute("Access")?.Value == "None")
+                {
+                    cib.HasAccess = false;
+                    cib.IsVisible = false;
+                }
+                Channels.Add(cib);
+                int id = blockCounter++;
+                xele.Add(new XAttribute("Id", "M-xx_A-xxxx-xx_CIB-" + id));
+                Id2Channel.Add("M-xx_A-xxxx-xx_CIB-" + id, cib);
+            }
+
+
+
+
+            AppParas = new Dictionary<int, AppParameter>();
+            AppParaTypes = new Dictionary<int, AppParameterTypeViewModel>();
+            ComObjects = new Dictionary<int, AppComObject>();
+
+            foreach (AppParameter para in _context.AppParameters.Where(p => p.ApplicationId == appId))
+                AppParas.Add(para.ParameterId, para);
+
+            foreach (AppParameterTypeViewModel type in _context.AppParameterTypes.Where(t => t.ApplicationId == appId))
+                AppParaTypes.Add(type.Id, type);
+
+            foreach (AppComObject co in _context.AppComObjects.Where(t => t.ApplicationId == appId))
+                ComObjects.Add(co.Id, co);
+
+
+            
+
+            foreach(XElement xele in xdyn.Descendants(GetXName("ParameterBlock")))
+            {
+                if(xele.Attribute("Inline")?.Value == "true") continue; //Tabellen überspringen
+                string text = "";
+
+                ParameterBlock pb = new ParameterBlock { Id = GetItemId(GetAttributeAsString(xele, "Id")) };
+                if (GetAttributeAsString(xele, "Access") == "None")
+                {
+                    pb.HasAccess = false;
+                    pb.IsVisible = false;
+                }
+                if (!string.IsNullOrEmpty(GetAttributeAsString(xele, "ParamRefId")))
+                {
+                    try
+                    {
+                        int paramId = GetItemId(GetAttributeAsString(xele, "ParamRefId"));
+                        AppParameter para = _context.AppParameters.Single(p => p.ParameterId == paramId && p.ApplicationId == appId);
+                        text = para.Text;
+                        if (para.Access == AccessType.None)
+                        {
+                            pb.HasAccess = false;
+                            pb.IsVisible = false;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        //Log.Error("Parameterblock TextRef Fehler!", ex);
+                        throw new Exception("ParameterBlock TextRef Fehler", ex);
+                    }
+                }
+                else
+                    text = GetAttributeAsString(xele, "Text");
+
+                pb.Text = CheckForBindings(pb, text, xele);
+                pb.Conditions = GetConditions(xele);
+                Id2ParamBlock.Add(GetAttributeAsString(xele, "Id"), pb);
+
+                string groupText = null;
+                XElement xparent = xele.Parent;
+                while(true) {
+                    string name = xparent.Name.LocalName;
+                    if(name == "Channel" || name == "ChannelIndependentBlock") {
+                        IDynChannel ch = Id2Channel[GetAttributeAsString(xparent, "Id")];
+                        if(ch is ChannelBlock){
+                            groupText = (ch as ChannelBlock).Text;
+                        }
+                        ch.Blocks.Add(pb);
+                        break;
+                    } else if(name == "ParameterBlock") {
+                        ParameterBlock pbp = Id2ParamBlock[GetAttributeAsString(xparent, "Id")];
+                        pbp.Blocks.Add(pb);
+                        break;
+                    }
+                    xparent = xparent.Parent;
+                }
+
+                int textRefId = -2;
+                if (xele.Attribute("TextParameterRefId") != null)
+                {
+                    textRefId = GetItemId(xele.Attribute("TextParameterRefId").Value);
+                } else {
+                    XElement temp = xele.Parent;
+                    while (textRefId != -2 || temp.Name.LocalName == "Dynamic")
+                    {
+                        temp = temp.Parent;
+                        textRefId = GetItemId(temp.Attribute("TextParameterRefId")?.Value);
+                    }
+                }
+
+                GetChildItems(pb, xele, textRefId, groupText);
+            }
+
+            //TODO generate default visibility
+
+            AppAdditional adds = new AppAdditional() {
+                ApplicationId = appId
+            };
+            adds.Bindings = FunctionHelper.ObjectToByteArray(Bindings);
+            adds.ParamsHelper = FunctionHelper.ObjectToByteArray(Channels, "Kaenx.DataContext.Import.Dynamic");
+            adds.Assignments = FunctionHelper.ObjectToByteArray(Assignments);
+
+
+            //TODO generate default comobjs
+
+
+            _context.AppAdditionals.Add(adds);
+        }
+
+
+        public string CheckForBindings(ChannelBlock channel, string text, XElement xele, Dictionary<string, string> args = null, Dictionary<string, int> idMapper = null) {
+            return CheckForBindings(text, BindingTypes.Channel, channel.Id, xele, args, idMapper);
+        }
+
+        public string CheckForBindings(ParameterBlock block, string text, XElement xele, Dictionary<string, string> args = null, Dictionary<string, int> idMapper = null) {
+            return CheckForBindings(text, BindingTypes.ParameterBlock, block.Id,  xele, args, idMapper);
+        }
+
+        public string CheckForBindings(AppComObject com, string text, XElement xele, Dictionary<string, string> args = null, Dictionary<string, int> idMapper = null){
+            return CheckForBindings(text, BindingTypes.ComObject, com.Id, xele, args, idMapper);
+        }
+
+        public string CheckForBindings(string text, BindingTypes type, int targetId, XElement xele, Dictionary<string, string> args, Dictionary<string, int> idMapper) {
+            Regex reg = new Regex("{{(.*)}}");
+            if(reg.IsMatch(text)){
+                Match match = reg.Match(text);
+                string g2 = match.Groups[1].Value;
+                if(args != null && args.ContainsKey(g2)) {
+                    //Argument von Modul einsetzen
+                    return text.Replace(match.Groups[0].Value, args[g2]);
+                }
+
+                ParamBinding bind = new ParamBinding()
+                {
+                    Type = type,
+                    TargetId = targetId,
+                    FullText = text.Replace(match.Groups[0].Value, "{{dyn}}")
+                };
+                //Text beinhaltet ein Binding zu einem Parameter
+                if(g2.Contains(":")){
+                    string[] opts = g2.Split(":");
+                    text = text.Replace(match.Groups[0].Value, opts[1]);
+                    bind.SourceId = opts[0] == "0" ? -1 : int.Parse(opts[0]);
+                    bind.DefaultText = opts[1];
+                } else {
+                    text = text.Replace(match.Groups[0].Value, "");
+                    bind.SourceId = g2 == "0" ? -1 : int.Parse(g2);
+                    bind.DefaultText = "";
+                }
+                
+                if(bind.SourceId == -1) {
+                    XElement xstatic = xele;
+                    while(true) {
+                        xstatic = xstatic.Parent;
+                        if(xstatic.Name.LocalName == "Static") break;
+                    }
+                    if(xstatic.Parent.Element(GetXName("Dynamic")) != null) {
+                        XElement xdyn = xstatic.Parent.Element(GetXName("Dynamic"));
+                        XElement xref = xdyn.Descendants(GetXName("ComObjectRefRef")).First(co => co.Attribute("RefId").Value == GetAttributeAsString(xele, "Id"));
+
+                        while(true) {
+                            xref = xref.Parent;
+                            if(xref.Name.LocalName == "ParameterBlock") break;
+                        }
+                        string bindId = GetAttributeAsString(xref, "TextParameterRefId");
+                        if(string.IsNullOrEmpty(bindId))
+                            throw new Exception("Kein TextParameterRefId für KO gefunden");
+                        bind.SourceId = GetItemId(bindId);
+                    }
+                }
+                
+                Bindings.Add(bind);
+            }
+            return text;
+        }
+
+
+
+        public void GetChildItems(ParameterBlock block, XElement xparent, int textRefId, string groupText) {
+            foreach(XElement xele in xparent.Elements())
+            {
+                switch (xele.Name.LocalName)
+                {
+                    case "when":
+                    case "choose":
+                        GetChildItems(block, xele, textRefId, groupText);
+                        break;
+                    case "ParameterRefRef":
+                        ParseParameterRefRef(xele, block, textRefId);
+                        break;
+                    case "ParameterSeparator":
+                        ParseSeparator(xele, block);
+                        break;
+                    case "ComObjectRefRef":
+                        ParseComObject(xele, textRefId, groupText);
+                        break;
+                    case "Assign":
+                        AssignParameter assign = new AssignParameter
+                        {
+                            Target = GetItemId(xele.Attribute("TargetParamRefRef").Value),
+                            Conditions = GetConditions(xele)
+                        };
+                        if (xele.Attribute("SourceParamRefRef") != null)
+                        {
+                            assign.Source = GetItemId(xele.Attribute("SourceParamRefRef").Value);
+                        }
+                        else
+                        {
+                            assign.Source = -1;
+                            assign.Value = xele.Attribute("Value").Value;
+                        }
+                        Assignments.Add(assign);
+                        break;
+
+                    case "ParameterBlock":
+                        if(xele.Attribute("Inline")?.Value != "true") continue; //Nur Tabellen bearbeiten
+                        ParseTable(block, xele, textRefId, groupText);
+                        break;
                 }
             }
         }
@@ -590,6 +641,15 @@ namespace Kaenx.DataContext.Import.Manager
             foreach(XElement xmod in xmodules){
                 xmod.Remove();
             }
+
+            //Give each ParameterBlock an unique ID
+            int blockCounter = 1;
+            foreach(XElement xblock in xdyn.Descendants(GetXName("ParameterBlock"))) {
+                string id = GetAttributeAsString(xblock, "Id");
+                id = id.Substring(0, id.LastIndexOf("-")+1);
+                id += blockCounter++;
+                xblock.Attribute("Id").Value = id;
+            }
         }
 
         public void RenameDynamic(XElement xdyn, Dictionary<string, string> args, Dictionary<string, int> idMapper) {
@@ -627,6 +687,7 @@ namespace Kaenx.DataContext.Import.Manager
             
             Regex reg = new Regex("{{(.*)}}");
 
+            int blockCounter = 1;
             foreach(XElement xobj in xobjs){
                 string temp = xobj.Attribute("Text").Value;
                 if(reg.IsMatch(temp)) {
@@ -681,8 +742,8 @@ namespace Kaenx.DataContext.Import.Manager
 
 
             if(args == null) OnStateChanged(appName + " - Kommunikationsobjekte");
-            if(xstatic.Element(GetXName("ComObjects")) != null) {
-                ParseComObjects(xstatic.Element(GetXName("ComObjects")), xstatic.Element(GetXName("ComObjectRefs")), appId, args, idMapper);
+            if(xstatic.Element(GetXName("ComObjectRefs")) != null) {
+                ParseComObjects(xstatic, appId, args, args != null ? idMapper : null);
             }
 
 
@@ -861,7 +922,6 @@ namespace Kaenx.DataContext.Import.Manager
             }
         }
 
-
         private void ImportCatalog(ImportDevice device, DeviceViewModel model) {
             foreach(ZipArchiveEntry entry in Archive.Entries)
             {
@@ -934,7 +994,6 @@ namespace Kaenx.DataContext.Import.Manager
             _context.SaveChanges();
         }
 
-
         private List<string> ImportHardware(ImportDevice device, DeviceViewModel model) {
             List<string> appIds = new List<string>();
 
@@ -1004,8 +1063,438 @@ namespace Kaenx.DataContext.Import.Manager
         }
 #endregion
 
+
+
 #region "Parser"
-        private void ParseComObjects(XElement xobjs, XElement xrefs, int appId, Dictionary<string, string> args, Dictionary<string, int> idMapper) {
+
+        private void ParseTable(ParameterBlock block, XElement xele, int textRefId, string groupText) {
+            ParameterBlock fakeBlock = new ParameterBlock();
+            GetChildItems(fakeBlock, xele, textRefId, groupText);
+            ParameterTable table = new ParameterTable() {
+                Id = GetItemId(xele.Attribute("Id").Value),
+                Conditions = GetConditions(xele)
+            };
+            table.Parameters = fakeBlock.Parameters;
+            table.Hash = "table:" + table.Id;
+            
+            foreach(XElement xrow in xele.Element(XName.Get("Rows", xele.Name.NamespaceName)).Elements()) {
+                string height = xrow.Attribute("Height")?.Value;
+                TableRow row = new TableRow();
+                if(!string.IsNullOrEmpty(height)) {
+                    if(height.Contains("%")){
+                        row.Unit = UnitTypes.Percentage;
+                        row.Height = int.Parse(height.Replace("%", ""));
+                    }
+                }
+                table.Rows.Add(row);
+            }
+
+            foreach(XElement xcol in xele.Element(XName.Get("Columns", xele.Name.NamespaceName)).Elements()) {
+                string width = xcol.Attribute("Width")?.Value;
+                TableColumn col = new TableColumn();
+                if(!string.IsNullOrEmpty(width)) {
+                    if(width.Contains("%")){
+                        col.Unit = UnitTypes.Percentage;
+                        col.Width = int.Parse(width.Replace("%", ""));
+                    }
+                }
+                table.Columns.Add(col);
+            }
+
+            foreach(XElement position in xele.Elements()){
+                if(position.Name.LocalName == "Rows" || position.Name.LocalName == "Columns") continue;
+
+                TablePosition pos = new TablePosition();
+                string[] posStr = position.Attribute("Cell").Value.Split(',');
+                pos.Row = int.Parse(posStr[0]);
+                pos.Column = int.Parse(posStr[1]);
+                table.Positions.Add(pos);
+            }
+
+
+            block.Parameters.Add(table);
+        }
+
+        private void ParseComObject(XElement xele, int textRefId, string groupText)
+        {
+            //TODO check later how we solve this
+            /*if (updatedComs.Contains(GetItemId(xele.Attribute("RefId").Value))) return;
+
+            bool changed = false;
+            AppComObject com = ComObjects[GetItemId(xele.Attribute("RefId").Value)];
+
+
+            if (com.BindedId == -2 && textRefId == -2 && string.IsNullOrEmpty(groupText)) return;
+
+            if (com.BindedId == -1)
+            {
+                com.BindedId = textRefId;
+                changed = true;
+            }
+
+            if (!string.IsNullOrEmpty(groupText))
+            {
+                com.Group = groupText;
+                changed = true;
+            }
+
+            if(com.BindedId != -2)
+            {
+                ParamBinding bind = new ParamBinding()
+                {
+                    Hash = "CO:" + com.Id,
+                    SourceId = com.BindedId
+                };
+
+                Regex reg = new Regex("{{((.+):(.+))}}");
+                Match m = reg.Match(com.Text);
+                if (m.Success)
+                {
+                    bind.DefaultText = m.Groups[3].Value;
+                    com.Text = com.Text.Replace(m.Value, "{{dyn}}");
+                    changed = true;
+                }
+                else
+                {
+                    reg = new Regex("{{(.+)}}");
+                    m = reg.Match(com.Text);
+                    if (m.Success)
+                    {
+                        bind.DefaultText = "";
+                        com.Text = com.Text.Replace(m.Value, "{{dyn}}");
+                        changed = true;
+                    }
+                }
+                Bindings.Add(bind);
+            }
+
+            if (changed)
+            {
+                contextC.AppComObjects.Update(com);
+                updatedComs.Add(com.Id);
+            }
+            */
+        }
+
+        private void ParseSeparator(XElement xele, ParameterBlock block)
+        {
+            int vers = int.Parse(xele.Name.NamespaceName.Substring(xele.Name.NamespaceName.LastIndexOf("/") + 1));
+
+            (List<ParamCondition> Conds, string Hash) = GetConditions(xele, true);
+
+            if(vers < 14)
+            {
+                ParamSeperator sepe = new ParamSeperator
+                {
+                    Id = GetItemId(xele.Attribute("Id").Value),
+                    Text = xele.Attribute("Text").Value,
+                    Conditions = Conds,
+                    Hash = Hash
+                };
+                if (string.IsNullOrEmpty(sepe.Text))
+                    sepe.Hint = "HorizontalRuler";
+                block.Parameters.Add(sepe);
+                return;
+            }
+
+            string hint = xele.Attribute("UIHint")?.Value;
+
+            IDynParameter sep;
+            switch (hint)
+            {
+                case null:
+                case "HeadLine":
+                case "HorizontalRuler":
+                    sep = new ParamSeperator() { Hint = hint };
+                    break;
+
+                case "Error":
+                case "Information":
+                    sep = new ParamSeperatorBox()
+                    {
+                        Hint = hint,
+                        IsError = (hint == "Error")
+                    };
+                    break;
+
+                default:
+                    //Log.Error("Unbekannter UIHint: " + hint);
+                    return;
+            }
+
+            sep.Conditions = Conds;
+            sep.Hash = Hash;
+            sep.Id = GetItemId(xele.Attribute("Id").Value);
+            sep.Text = xele.Attribute("Text").Value;
+            block.Parameters.Add(sep);
+        }
+
+        private void ParseParameterRefRef(XElement xele, ParameterBlock block, int textRefId)
+        {
+            AppParameter para = AppParas[GetItemId(xele.Attribute("RefId").Value)];
+            //TODO überprüfen
+            AppParameterTypeViewModel paraType = AppParaTypes[para.ParameterTypeId];
+            var (paramList, hash) = GetConditions(xele, true);
+
+            int refid = para.Id;
+
+            //TODO check why the heck i did this
+            /*if (Ref2Bindings.ContainsKey(refid))
+            {
+                foreach (ParamBinding bind in Ref2Bindings[refid])
+                {
+                    if (bind.SourceId == -1)
+                        bind.SourceId = textRefId;
+                    else
+                        bind.SourceId = para.Id;
+                }
+            }*/
+
+            bool hasAccess = para.Access != AccessType.None;
+            bool IsCtlEnabled = para.Access != AccessType.Read;
+
+            switch (paraType.Type)
+            {
+                case ParamTypes.None:
+                    IDynParameter paran = new ParamNone();
+                    paran.Id = para.ParameterId;
+                    paran.Text = para.Text;
+                    paran.SuffixText = para.SuffixText;
+                    paran.Default = para.Value;
+                    paran.Value = para.Value;
+                    paran.Conditions = paramList;
+                    paran.Hash = hash;
+                    paran.HasAccess = hasAccess;
+                    paran.IsEnabled = IsCtlEnabled;
+                    block.Parameters.Add(paran);
+                    break;
+
+                case ParamTypes.IpAdress:
+                    IDynParameter pip;
+                    if (para.Access == AccessType.Read)
+                        pip = new Dynamic.ParamTextRead();
+                    else
+                        pip = new Dynamic.ParamText();
+                    pip.Id = para.ParameterId;
+                    pip.Text = para.Text;
+                    pip.SuffixText = para.SuffixText;
+                    pip.Default = para.Value;
+                    pip.Value = para.Value;
+                    pip.Conditions = paramList;
+                    pip.Hash = hash;
+                    pip.HasAccess = hasAccess;
+                    pip.IsEnabled = IsCtlEnabled;
+                    block.Parameters.Add(pip);
+                    break;
+
+                case ParamTypes.NumberInt:
+                case ParamTypes.NumberUInt:
+                case ParamTypes.Float9:
+                    Dynamic.ParamNumber pnu = new Dynamic.ParamNumber
+                    {
+                        Id = para.ParameterId,
+                        Text = para.Text,
+                        SuffixText = para.SuffixText,
+                        Value = para.Value,
+                        Default = para.Value,
+                        Conditions = paramList,
+                        Hash = hash,
+                        HasAccess = hasAccess,
+                        IsEnabled = IsCtlEnabled
+                    };
+                    try
+                    {
+                        pnu.Minimum = StringToInt(paraType.Tag1);
+                        pnu.Maximum = StringToInt(paraType.Tag2);
+                    }
+                    catch
+                    {
+
+                    }
+                    block.Parameters.Add(pnu);
+                    break;
+
+                case ParamTypes.Text:
+                    IDynParameter pte;
+                    if (para.Access == AccessType.Read)
+                        pte = new Dynamic.ParamTextRead();
+                    else
+                        pte = new Dynamic.ParamText();
+                    pte.Id = para.ParameterId;
+                    pte.Text = para.Text;
+                    pte.SuffixText = para.SuffixText;
+                    pte.Default = para.Value;
+                    pte.Value = para.Value;
+                    pte.Conditions = paramList;
+                    pte.Hash = hash;
+                    pte.HasAccess = hasAccess;
+                    pte.IsEnabled = IsCtlEnabled;
+                    block.Parameters.Add(pte);
+                    break;
+
+                case ParamTypes.Enum:
+                    List<ParamEnumOption> options = new List<ParamEnumOption>();
+                    foreach(AppParameterTypeEnumViewModel enu in _context.AppParameterTypeEnums.Where(e => e.TypeId == paraType.Id).OrderBy(e => e.Order))
+                    {
+                        options.Add(new ParamEnumOption() { Text = enu.Text, Value = enu.Value });
+                    }
+                    int count = options.Count();
+
+                    if (count > 2 || count == 1)
+                    {
+                        Dynamic.ParamEnum pen = new Dynamic.ParamEnum
+                        {
+                            Id = para.ParameterId,
+                            Text = para.Text,
+                            SuffixText = para.SuffixText,
+                            Default = para.Value,
+                            Value = para.Value,
+                            Options = options,
+                            Conditions = paramList,
+                            Hash = hash,
+                            HasAccess = hasAccess,
+                            IsEnabled = IsCtlEnabled
+                        };
+                        block.Parameters.Add(pen);
+                    } else
+                    {
+                        Dynamic.ParamEnumTwo pent = new ParamEnumTwo
+                        {
+                            Id = para.ParameterId,
+                            Text = para.Text,
+                            SuffixText = para.SuffixText,
+                            Default = para.Value,
+                            Value = para.Value,
+                            Option1 = options[0],
+                            Option2 = options[1],
+                            Conditions = paramList,
+                            Hash = hash,
+                            HasAccess = hasAccess,
+                            IsEnabled = IsCtlEnabled
+                        };
+                        block.Parameters.Add(pent);
+                    }
+                    break;
+
+                case ParamTypes.CheckBox:
+                    ParamCheckBox pch = new ParamCheckBox
+                    {
+                        Id = para.ParameterId,
+                        Text = para.Text,
+                        SuffixText = para.SuffixText,
+                        Default = para.Value,
+                        Value = para.Value,
+                        Conditions = paramList,
+                        Hash = hash,
+                        HasAccess = hasAccess,
+                        IsEnabled = IsCtlEnabled
+                    };
+                    block.Parameters.Add(pch);
+                    break;
+
+                case ParamTypes.Color:
+                    ParamColor pco = new ParamColor
+                    {
+                        Id = para.ParameterId,
+                        Text = para.Text,
+                        SuffixText = para.SuffixText,
+                        Default = para.Value,
+                        Value = para.Value,
+                        Conditions = paramList,
+                        Hash = hash,
+                        HasAccess = hasAccess,
+                        IsEnabled = IsCtlEnabled
+                    };
+                    block.Parameters.Add(pco);
+                    break;
+
+                case ParamTypes.Time:
+                    string[] tags = paraType.Tag1.Split(";");
+                    ParamTime pti = new ParamTime()
+                    {
+                        Id = para.ParameterId,
+                        Text = para.Text,
+                        Default = para.Value,
+                        Value = para.Value,
+                        Conditions = paramList,
+                        Hash = hash,
+                        HasAccess = hasAccess,
+                        IsEnabled = IsCtlEnabled,
+                        Minimum = int.Parse(tags[0]),
+                        Maximum = int.Parse(paraType.Tag2)
+                    };
+
+                    switch (tags[1])
+                    {
+                        case "Hours":
+                            pti.SuffixText = "Stunden";
+                            pti.Divider = 1;
+                            break;
+                        case "Seconds":
+                            pti.SuffixText = "Sekunden";
+                            pti.Divider = 1;
+                            break;
+                        case "TenSeconds":
+                            pti.SuffixText = "Zehn Sekunden";
+                            pti.Divider = 10;
+                            break;
+                        case "HundredSeconds":
+                            pti.SuffixText = "Hundert Sekunden";
+                            pti.Divider = 100;
+                            break;
+                        case "Milliseconds":
+                            pti.SuffixText = "Millisekunden";
+                            pti.Divider = 1;
+                            break;
+                        case "TenMilliseconds":
+                            pti.SuffixText = "Zehn Millisekunden";
+                            pti.Divider = 10;
+                            break;
+                        case "HundredMilliseconds":
+                            pti.SuffixText = "Hundert Millisekunden";
+                            pti.Divider = 100;
+                            break;
+
+                        //Todo 
+                        /*
+                         * PackedSecondsAndMilliseconds
+                            Integer value in milliseconds
+                            2 bytes:
+                            (lo) lower 8 bits of milliseconds
+                            (hi) ffssssss
+                            (upper 2 bits of milliseconds + seconds)
+                            Example: 2.500 seconds are encoded as F4h 42h
+                            
+                            11 110100  01000010
+                            PackedDaysHoursMinutesAndSeconds
+                            Integer value in seconds
+                            3 bytes, same as DPT 10.001:
+                            (lo) seconds
+                            | minutes
+                            (hi) dddhhhhh (days and hours)
+                            Example: 2 days, 8 hours, 20 minutes and 10 seconds is encoded as 0Ah 14h 48h
+                         */
+
+                        default:
+                            //Log.Error("TypeTime Unit nicht unterstützt!! " + tags[1]);
+                            throw new Exception("TypeTime Unit nicht unterstützt!! " + tags[1]);
+                    }
+                    block.Parameters.Add(pti);
+                    break;
+
+                default:
+                    //Serilog.Log.Error("Parametertyp nicht festgelegt!! " + paraType.Type.ToString());
+                    //Debug.WriteLine("Parametertyp nicht festgelegt!! " + paraType.Type.ToString());
+                    throw new Exception("Parametertyp nicht festgelegt!! " + paraType.Type.ToString());
+            }
+        }
+
+        private void ParseComObjects(XElement xstatic, int appId, Dictionary<string, string> args, Dictionary<string, int> idMapper) {
+            XElement xobjs = xstatic.Element(GetXName("ComObjectTable"));
+            XElement xrefs = xstatic.Element(GetXName("ComObjectRefs"));
+            if(xobjs == null)
+                xobjs = xstatic.Element(GetXName("ComObjects"));
+            
             Dictionary<string, AppComObject> comObjects = new Dictionary<string, AppComObject>();
             
             foreach(XElement xobj in xobjs.Elements()) {
@@ -1038,6 +1527,7 @@ namespace Kaenx.DataContext.Import.Manager
             foreach(XElement xref in xrefs.Elements()) {
                 AppComObject com = new AppComObject();
                 com.LoadComp(comObjects[GetAttributeAsString(xref, "RefId")]);
+                com.Id = GetItemId(GetAttributeAsString(xref, "Id"));
 
                 if(HasAttribute(xref, "CommunicationFlag")) com.Flag_Communicate = GetAttributeAsString(xref, "CommunicationFlag") == "Enabled";
                 if(HasAttribute(xref, "ReadFlag")) com.Flag_Read = GetAttributeAsString(xref, "ReadFlag") == "Enabled";
@@ -1061,28 +1551,8 @@ namespace Kaenx.DataContext.Import.Manager
 
                 //TODO if DataPoint is -1 !!
 
+                com.Text = CheckForBindings(com, com.Text, xref, args, idMapper);
                 Regex reg = new Regex("{{(.*)}}");
-                if(reg.IsMatch(com.Text)){
-                    Match match = reg.Match(com.Text);
-                    string g2 = match.Groups[2].Value;
-                    if(args != null && args.ContainsKey(g2)) {
-                        //Argument von Modul einsetzen
-                        com.Text = com.Text.Replace("{{" + g2 + "}}", args[g2]);
-                    } else {
-                        //Text beinhaltet ein Binding zu einem Parameter
-                        if(g2.Contains(":")){
-                            string[] opts = g2.Split(":");
-                            com.BindedId = opts[0] == "0" ? -1 : int.Parse(opts[0]);
-                            com.BindedDefaultText = opts[1];
-                        } else {
-                            com.BindedId = g2 == "0" ? -1 : int.Parse(g2);
-                            com.BindedDefaultText = "";
-                        }
-                        //If we are in a ModuleDefine we have to map to the new Id
-                        if(args != null)
-                            com.BindedId = idMapper["p" + com.BindedId];
-                    }
-                }
                 if(com.FunctionText != null && reg.IsMatch(com.FunctionText)) {
                     //TODO maybe add binding for this too
                     Match match = reg.Match(com.FunctionText);
@@ -1223,6 +1693,15 @@ namespace Kaenx.DataContext.Import.Manager
                             int tempOut;
                             if (xele.Attribute("default")?.Value == "true")
                             {
+                                //TODO check if it works
+                                //check if choose ist ParameterBlock (happens when vd5 gets converted to knxprods)
+                                if(xele.Parent.Parent.Name.LocalName == "ParameterBlock"){
+                                    string refid = xele.Parent.Attribute("ParamRefId").Value;
+                                    if(GetAttributeAsString(xele.Parent.Parent, "TextParameterRefId") == refid)
+                                        break;
+                                }
+
+
                                 ids = "d" + ids;
                                 List<string> values = new List<string>();
                                 IEnumerable<XElement> whens = xele.Parent.Elements();
@@ -1246,11 +1725,6 @@ namespace Kaenx.DataContext.Import.Manager
                             {
                                 cond.Values = string.Join(",", xele.Attribute("test").Value.Split(" "));
                                 cond.Operation = ConditionOperation.IsInValue;
-                            }
-                            else if (xele.Attribute("test")?.Value.StartsWith("!=") == true)
-                            {
-                                cond.Values = xele.Attribute("test").Value.Substring(2);
-                                cond.Operation = ConditionOperation.NotEqual;
                             }
                             else if (xele.Attribute("test")?.Value.StartsWith("<") == true)
                             {
@@ -1379,17 +1853,34 @@ namespace Kaenx.DataContext.Import.Manager
 
 
         public string EscapeString(string input) {
+            input = input.Replace("%", "%25");
             input = input.Replace(" ", "%20");
+            input = input.Replace("!", "%21");
+            input = input.Replace("\"", "%22");
+            input = input.Replace("#", "%23");
+            input = input.Replace("$", "%24");
             input = input.Replace("&", "%26");
+            input = input.Replace("(", "%28");
+            input = input.Replace(")", "%29");
             input = input.Replace("+", "%2B");
             input = input.Replace("-", "%2D");
             input = input.Replace(".", "%2E");
             input = input.Replace("/", "%2F");
             input = input.Replace(":", "%3A");
             input = input.Replace(";", "%3B");
+            input = input.Replace("<", "%3C");
             input = input.Replace("=", "%3D");
+            input = input.Replace(">", "%3E");
             input = input.Replace("?", "%3F");
+            input = input.Replace("@", "%40");
+            input = input.Replace("[", "%5B");
+            input = input.Replace("\\", "%5C");
+            input = input.Replace("]", "%5D");
+            input = input.Replace("^", "%5C");
             input = input.Replace("_", "%5F");
+            input = input.Replace("{", "%7B");
+            input = input.Replace("|", "%7C");
+            input = input.Replace("}", "%7D");
 
             input = input.Replace("%", ".");
             return input;
@@ -1456,6 +1947,36 @@ namespace Kaenx.DataContext.Import.Manager
         {
             return XName.Get(name, currentNamespace);
         }
+
+        public static int StringToInt(string input, int def = 0)
+        {
+            return (int)StringToFloat(input, (float)def);
+        }
+
+        public static float StringToFloat(string input, float def = 0)
+        {
+            if (input == null) return def;
+
+            if (input.ToLower().Contains("e+"))
+            {
+                float numb = float.Parse(input.Substring(0, 5).Replace('.', ','));
+                int expo = int.Parse(input.Substring(input.IndexOf('+') + 1));
+                if (expo == 0)
+                    return int.Parse(numb.ToString());
+                float res = numb * (10 * expo);
+                return res;
+            }
+
+            try
+            {
+                return float.Parse(input);
+            }
+            catch
+            {
+                return def;
+            }
+        }
+
 
         public override void Dispose()
         {

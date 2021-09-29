@@ -12,8 +12,18 @@ namespace Kaenx.DataContext.Import.Dynamic
         [JsonProperty("s")]
         public int SourceId { get; set; } = -2;
         [JsonProperty("t")]
+        public int TargetId { get; set; } = -2;
+        [JsonProperty("d")]
         public string DefaultText { get; set; }
-        [JsonProperty("h")]
-        public string Hash { get; set; }
+        [JsonProperty("f")]
+        public string FullText { get; set; }
+        [JsonProperty("b")]
+        public BindingTypes Type { get; set; }
+    }
+
+    public enum BindingTypes {
+        Channel,
+        ComObject,
+        ParameterBlock
     }
 }

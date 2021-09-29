@@ -183,7 +183,7 @@ namespace Kaenx.DataContext.Import.Manager
                         ParameterBlock block = new ParameterBlock();
                         block.HasAccess = true;
                         block.Conditions = GenerateConditionsParameterGroup(int.Parse(group.Attribute("Id").Value), xdevice);
-                        block.DisplayText = group.Attribute("Name").Value;
+                        block.Text = group.Attribute("Name").Value;
 
                         foreach(XElement xpara in group.Elements())
                         {

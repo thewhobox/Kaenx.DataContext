@@ -17,16 +17,15 @@ namespace Kaenx.DataContext.Import.Dynamic
 
         public int Id { get; set; }
         public string Name { get; set; }
-        public string Text { get; set; }
         public string DefaultText { get; set; }
         public bool HasAccess { get; set; } = true;
         public int Number { get; set; }
 
-        private string _dtext;
-        public string DisplayText
+        private string _text;
+        public string Text
         {
-            get { return (_dtext == null) ? Text : _dtext; }
-            set { _dtext = value; Changed("DisplayText"); }
+            get { return _text; }
+            set { _text = value; Changed("Text"); }
         }
 
         public List<ParameterBlock> Blocks { get; set; } = new List<ParameterBlock>();

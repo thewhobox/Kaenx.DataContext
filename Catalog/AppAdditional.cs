@@ -11,9 +11,7 @@ namespace Kaenx.DataContext.Catalog
         public int Id { get; set; }
         public int ApplicationId { get; set; }
         public byte[] LoadProcedures { get; set; }
-        public byte[] Dynamic { get; set; }
         public byte[] Bindings { get; set; }
-        public byte[] ParameterAll { get; set; }
         public byte[] ComsAll { get; set; }
         public byte[] ComsDefault { get; set; }
         public byte[] ParamsHelper { get; set; }

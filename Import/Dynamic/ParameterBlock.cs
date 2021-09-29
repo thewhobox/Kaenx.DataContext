@@ -18,22 +18,20 @@ namespace Kaenx.DataContext.Import.Dynamic
 
         [JsonProperty("i")]
         public int Id { get; set; }
-        [JsonProperty("t")]
-        public string Text { get; set; }
         [JsonProperty("d")]
         public string DefaultText { get; set; }
         [JsonProperty("a")]
         public bool HasAccess { get; set; } = true;
 
-        private string _dtext;
-        [JsonProperty("di")]
-        public string DisplayText
+        private string _text;
+        [JsonProperty("t")]
+        public string Text
         {
-            get { return _dtext; }
+            get { return _text; }
             set
             {
-                _dtext = value;
-                Changed("DisplayText");
+                _text = value;
+                Changed("Text");
             }
         }
 
@@ -53,5 +51,7 @@ namespace Kaenx.DataContext.Import.Dynamic
         public List<ParamCondition> Conditions { get; set; } = new List<ParamCondition>();
         [JsonProperty("p")]
         public List<IDynParameter> Parameters { get; set; } = new List<IDynParameter>();
+        [JsonProperty("b")]
+        public List<ParameterBlock> Blocks { get; set; } = new List<ParameterBlock>();
     }
 }

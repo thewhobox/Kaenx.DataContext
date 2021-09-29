@@ -12,8 +12,6 @@ namespace Kaenx.DataContext.Catalog
         [Key]
         public int UId { get; set; }
         public int Id { get; set; }
-        public int BindedId { get; set; } = -2;
-        public string BindedDefaultText { get; set; }
         public int ApplicationId { get; set; }
 
         [MaxLength(100)]
@@ -36,9 +34,6 @@ namespace Kaenx.DataContext.Catalog
 
         public void LoadComp(AppComObject com)
         {
-            Id = com.Id;
-            BindedId = com.BindedId;
-            BindedDefaultText = com.BindedDefaultText;
             ApplicationId = com.ApplicationId;
             Text = com.Text;
             FunctionText = com.FunctionText;

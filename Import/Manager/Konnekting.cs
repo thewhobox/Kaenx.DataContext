@@ -301,6 +301,7 @@ namespace Kaenx.DataContext.Import.Manager
                     CalcDefaultVisibility(channel, Id2Values);
                     adds.ParamsHelper = FunctionHelper.ObjectToByteArray(Channels, "Kaenx.DataContext.Import.Dynamic");
                     
+                    OnStateChanged("Kommunikationsobjekte");
                     List<int> comsDefault = new List<int>();
                     foreach(XElement xcom in xdevice.Element(GetXName("CommObjects")).Elements()) {
                         AppComObject com = null;

@@ -12,8 +12,6 @@ namespace Kaenx.DataContext.Catalog
     {
         [Key]
         public int Id { get; set; }
-        [MaxLength(40)]
-        public string Hash { get; set; }
         [MaxLength(100)]
         public string Name { get; set; }
         public int HardwareId { get; set; }

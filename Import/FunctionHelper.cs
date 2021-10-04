@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
+using System.IO.Compression;
+using System.Text;
 using Kaenx.DataContext.Import.Dynamic;
 
 namespace Kaenx.DataContext.Import {
@@ -26,12 +29,12 @@ namespace Kaenx.DataContext.Import {
             {
                 text = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
             }
-            return System.Text.Encoding.UTF8.GetBytes(text);
+            return Zip(text); //System.Text.Encoding.UTF8.GetBytes(text);
         }
 
         public static T ByteArrayToObject<T>(byte[] obj, string ns = null)
         {
-            string text = System.Text.Encoding.UTF8.GetString(obj);
+            string text = Unzip(obj); //System.Text.Encoding.UTF8.GetString(obj);
 
             if (ns != null)
             {
@@ -49,6 +52,30 @@ namespace Kaenx.DataContext.Import {
                 return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(text);
             }
 
+        }
+
+        public static string Unzip(byte[] bytes) {
+            using (var msi = new MemoryStream(bytes))
+            using (var mso = new MemoryStream()) {
+                using (var gs = new GZipStream(msi, CompressionMode.Decompress)) {
+                    gs.CopyTo(mso);
+                }
+
+                return Encoding.UTF8.GetString(mso.ToArray());
+            }
+        }
+
+        public static byte[] Zip(string str) {
+            var bytes = Encoding.UTF8.GetBytes(str);
+
+            using (var msi = new MemoryStream(bytes))
+            using (var mso = new MemoryStream()) {
+                using (var gs = new GZipStream(mso, CompressionMode.Compress)) {
+                    msi.CopyTo(gs);
+                }
+
+                return mso.ToArray();
+            }
         }
 
         public static bool CheckConditions(List<ParamCondition> conds, Dictionary<int, string> values)

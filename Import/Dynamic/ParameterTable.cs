@@ -22,8 +22,6 @@ namespace Kaenx.DataContext.Import.Dynamic
         public bool HasAccess { get; set; } = true;
         [JsonProperty("t")]
         public string Text { get; set; }
-        [JsonProperty("h")]
-        public string Hash { get; set; }
         [JsonProperty("s")]
         public string SuffixText { get; set; }
         [JsonProperty("v")]

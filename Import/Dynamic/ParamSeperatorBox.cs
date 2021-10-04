@@ -11,7 +11,6 @@ namespace Kaenx.DataContext.Import.Dynamic
     {
         public int Id { get; set; }
         public string Text { get; set; }
-        public string Hash { get; set; }
         public string SuffixText { get; set; }
         public string Default { get; set; }
         public string Hint { get; set; }

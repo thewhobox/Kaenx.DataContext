@@ -19,7 +19,8 @@ namespace Kaenx.DataContext.Import.Manager
         private string currentNamespace {get;set;}
         private string appName {get;set;}
 
-        private List<ParamBinding> Bindings = new List<ParamBinding>();
+        private Dictionary<int, List<List<ParamCondition>>> ComConditions;
+        private List<ParamBinding> Bindings;
         private Dictionary<int, AppParameter> AppParas;
         private Dictionary<int, AppParameterTypeViewModel> AppParaTypes;
         private Dictionary<int, AppComObject> ComObjects;
@@ -220,6 +221,9 @@ namespace Kaenx.DataContext.Import.Manager
 
 #region "Importer"
         private void ImportApplication(ImportDevice device, DeviceViewModel model, string appId) {
+            Bindings = new List<ParamBinding>();
+            ComConditions = new Dictionary<int, List<List<ParamCondition>>>();
+
             string manu = appId.Substring(0, 6);
             ZipArchiveEntry entry = Archive.GetEntry($"{manu}/{appId}.xml");
             XElement xapp = XDocument.Load(entry.Open()).Root;
@@ -307,15 +311,12 @@ namespace Kaenx.DataContext.Import.Manager
         }
 
         private void ImportDynamic(XElement xdyn, int appId) {
-            OnStateChanged(appName + " - Dynamic Ansicht");
+            OnStateChanged(appName + " - Dynamische Ansicht");
 
             Dictionary<string, IDynChannel> Id2Channel = new Dictionary<string, IDynChannel>();
             Dictionary<string, ParameterBlock> Id2ParamBlock = new Dictionary<string, ParameterBlock>();
             List<IDynChannel> Channels = new List<IDynChannel>();
 
-
-
-            
             foreach(XElement xele in xdyn.Descendants(GetXName("Channel")))
             {
                 if(xele.Attribute("Text")?.Value == "")
@@ -459,7 +460,45 @@ namespace Kaenx.DataContext.Import.Manager
                 GetChildItems(pb, xele, textRefId, groupText);
             }
 
+            
+            OnStateChanged(appName + " - Dynamische Ansicht (Standard Sichtbarkeit)");
+
             //TODO generate default visibility
+            Dictionary<int, string> Id2Value = new Dictionary<int, string>();
+            foreach(IDynChannel channel in Channels) {
+                foreach(ParameterBlock block in channel.Blocks)
+                    GenerateParamList(block, Id2Value);
+            }
+
+            foreach (IDynChannel ch in Channels)
+            {
+                if(ch.HasAccess)
+                    ch.IsVisible = FunctionHelper.CheckConditions(ch.Conditions, Id2Value);
+
+                foreach (ParameterBlock block in ch.Blocks)
+                {
+                    if(block.HasAccess)
+                        block.IsVisible = FunctionHelper.CheckConditions(block.Conditions, Id2Value);
+
+                    CheckBlockVisibility(block, Id2Value);
+                }
+            }
+
+            List<int> ComsDefault = new List<int>();
+            foreach(AppComObject com in ComObjects.Values){
+                if(ComConditions.ContainsKey(com.Id)){
+                    bool flag = false;
+                    foreach(List<ParamCondition> conds in ComConditions[com.Id]){
+                        if(FunctionHelper.CheckConditions(conds, Id2Value))
+                            flag = true;
+                    }
+                    if(flag)
+                        ComsDefault.Add(com.Id);
+                } else {
+                    ComsDefault.Add(com.Id);
+                }
+            }
+
 
             AppAdditional adds = new AppAdditional() {
                 ApplicationId = appId
@@ -467,13 +506,40 @@ namespace Kaenx.DataContext.Import.Manager
             adds.Bindings = FunctionHelper.ObjectToByteArray(Bindings);
             adds.ParamsHelper = FunctionHelper.ObjectToByteArray(Channels, "Kaenx.DataContext.Import.Dynamic");
             adds.Assignments = FunctionHelper.ObjectToByteArray(Assignments);
-
+            adds.ComsAll = FunctionHelper.ObjectToByteArray(ComConditions);
+            adds.ComsDefault = FunctionHelper.ObjectToByteArray(ComsDefault);
 
             //TODO generate default comobjs
 
 
             _context.AppAdditionals.Add(adds);
+            _context.SaveChanges();
         }
+
+        public void GenerateParamList(ParameterBlock block, Dictionary<int, string> Id2Value) {
+            foreach (IDynParameter para in block.Parameters)
+            {
+                //if (Id2Value.ContainsKey(para.Id))
+                //    throw new Exception("Es befinden sich mehrere ParameterRefs in Dynamic! " + para.Id);
+
+                Id2Value[para.Id] = para.Value;
+            }
+
+            foreach(ParameterBlock pb in block.Blocks)
+                GenerateParamList(pb, Id2Value);
+        }
+
+        public void CheckBlockVisibility(ParameterBlock block, Dictionary<int, string> Id2Value) {
+            foreach (IDynParameter para in block.Parameters)
+            {
+                if(block.HasAccess)
+                    para.IsVisible = FunctionHelper.CheckConditions(para.Conditions, Id2Value);
+            }
+
+            foreach(ParameterBlock pb in block.Blocks)
+                CheckBlockVisibility(pb, Id2Value);
+        }
+
 
 
         public string CheckForBindings(ChannelBlock channel, string text, XElement xele, Dictionary<string, string> args = null, Dictionary<string, int> idMapper = null) {
@@ -502,11 +568,11 @@ namespace Kaenx.DataContext.Import.Manager
                 {
                     Type = type,
                     TargetId = targetId,
-                    FullText = text.Replace(match.Groups[0].Value, "{{dyn}}")
+                    FullText = text.Replace(match.Groups[0].Value, "{d}")
                 };
                 //Text beinhaltet ein Binding zu einem Parameter
-                if(g2.Contains(":")){
-                    string[] opts = g2.Split(":");
+                if(g2.Contains(':')){
+                    string[] opts = g2.Split(':');
                     text = text.Replace(match.Groups[0].Value, opts[1]);
                     bind.SourceId = opts[0] == "0" ? -1 : int.Parse(opts[0]);
                     bind.DefaultText = opts[1];
@@ -560,7 +626,7 @@ namespace Kaenx.DataContext.Import.Manager
                         ParseSeparator(xele, block);
                         break;
                     case "ComObjectRefRef":
-                        ParseComObject(xele, textRefId, groupText);
+                        ParseComObject(xele);
                         break;
                     case "Assign":
                         AssignParameter assign = new AssignParameter
@@ -687,7 +753,6 @@ namespace Kaenx.DataContext.Import.Manager
             
             Regex reg = new Regex("{{(.*)}}");
 
-            int blockCounter = 1;
             foreach(XElement xobj in xobjs){
                 string temp = xobj.Attribute("Text").Value;
                 if(reg.IsMatch(temp)) {
@@ -1075,7 +1140,6 @@ namespace Kaenx.DataContext.Import.Manager
                 Conditions = GetConditions(xele)
             };
             table.Parameters = fakeBlock.Parameters;
-            table.Hash = "table:" + table.Id;
             
             foreach(XElement xrow in xele.Element(XName.Get("Rows", xele.Name.NamespaceName)).Elements()) {
                 string height = xrow.Attribute("Height")?.Value;
@@ -1115,72 +1179,21 @@ namespace Kaenx.DataContext.Import.Manager
             block.Parameters.Add(table);
         }
 
-        private void ParseComObject(XElement xele, int textRefId, string groupText)
+        private void ParseComObject(XElement xele)
         {
-            //TODO check later how we solve this
-            /*if (updatedComs.Contains(GetItemId(xele.Attribute("RefId").Value))) return;
+            int id = GetItemId(GetAttributeAsString(xele, "RefId"));
+            
+            if(!ComConditions.ContainsKey(id))
+                ComConditions.Add(id, new List<List<ParamCondition>>());
 
-            bool changed = false;
-            AppComObject com = ComObjects[GetItemId(xele.Attribute("RefId").Value)];
-
-
-            if (com.BindedId == -2 && textRefId == -2 && string.IsNullOrEmpty(groupText)) return;
-
-            if (com.BindedId == -1)
-            {
-                com.BindedId = textRefId;
-                changed = true;
-            }
-
-            if (!string.IsNullOrEmpty(groupText))
-            {
-                com.Group = groupText;
-                changed = true;
-            }
-
-            if(com.BindedId != -2)
-            {
-                ParamBinding bind = new ParamBinding()
-                {
-                    Hash = "CO:" + com.Id,
-                    SourceId = com.BindedId
-                };
-
-                Regex reg = new Regex("{{((.+):(.+))}}");
-                Match m = reg.Match(com.Text);
-                if (m.Success)
-                {
-                    bind.DefaultText = m.Groups[3].Value;
-                    com.Text = com.Text.Replace(m.Value, "{{dyn}}");
-                    changed = true;
-                }
-                else
-                {
-                    reg = new Regex("{{(.+)}}");
-                    m = reg.Match(com.Text);
-                    if (m.Success)
-                    {
-                        bind.DefaultText = "";
-                        com.Text = com.Text.Replace(m.Value, "{{dyn}}");
-                        changed = true;
-                    }
-                }
-                Bindings.Add(bind);
-            }
-
-            if (changed)
-            {
-                contextC.AppComObjects.Update(com);
-                updatedComs.Add(com.Id);
-            }
-            */
+            ComConditions[id].Add(GetConditions(xele));
         }
 
         private void ParseSeparator(XElement xele, ParameterBlock block)
         {
             int vers = int.Parse(xele.Name.NamespaceName.Substring(xele.Name.NamespaceName.LastIndexOf("/") + 1));
 
-            (List<ParamCondition> Conds, string Hash) = GetConditions(xele, true);
+            List<ParamCondition> Conds = GetConditions(xele, true);
 
             if(vers < 14)
             {
@@ -1188,8 +1201,7 @@ namespace Kaenx.DataContext.Import.Manager
                 {
                     Id = GetItemId(xele.Attribute("Id").Value),
                     Text = xele.Attribute("Text").Value,
-                    Conditions = Conds,
-                    Hash = Hash
+                    Conditions = Conds
                 };
                 if (string.IsNullOrEmpty(sepe.Text))
                     sepe.Hint = "HorizontalRuler";
@@ -1223,7 +1235,6 @@ namespace Kaenx.DataContext.Import.Manager
             }
 
             sep.Conditions = Conds;
-            sep.Hash = Hash;
             sep.Id = GetItemId(xele.Attribute("Id").Value);
             sep.Text = xele.Attribute("Text").Value;
             block.Parameters.Add(sep);
@@ -1234,7 +1245,7 @@ namespace Kaenx.DataContext.Import.Manager
             AppParameter para = AppParas[GetItemId(xele.Attribute("RefId").Value)];
             //TODO überprüfen
             AppParameterTypeViewModel paraType = AppParaTypes[para.ParameterTypeId];
-            var (paramList, hash) = GetConditions(xele, true);
+            var paramList = GetConditions(xele, true);
 
             int refid = para.Id;
 
@@ -1263,7 +1274,6 @@ namespace Kaenx.DataContext.Import.Manager
                     paran.Default = para.Value;
                     paran.Value = para.Value;
                     paran.Conditions = paramList;
-                    paran.Hash = hash;
                     paran.HasAccess = hasAccess;
                     paran.IsEnabled = IsCtlEnabled;
                     block.Parameters.Add(paran);
@@ -1281,7 +1291,6 @@ namespace Kaenx.DataContext.Import.Manager
                     pip.Default = para.Value;
                     pip.Value = para.Value;
                     pip.Conditions = paramList;
-                    pip.Hash = hash;
                     pip.HasAccess = hasAccess;
                     pip.IsEnabled = IsCtlEnabled;
                     block.Parameters.Add(pip);
@@ -1298,7 +1307,6 @@ namespace Kaenx.DataContext.Import.Manager
                         Value = para.Value,
                         Default = para.Value,
                         Conditions = paramList,
-                        Hash = hash,
                         HasAccess = hasAccess,
                         IsEnabled = IsCtlEnabled
                     };
@@ -1326,7 +1334,6 @@ namespace Kaenx.DataContext.Import.Manager
                     pte.Default = para.Value;
                     pte.Value = para.Value;
                     pte.Conditions = paramList;
-                    pte.Hash = hash;
                     pte.HasAccess = hasAccess;
                     pte.IsEnabled = IsCtlEnabled;
                     block.Parameters.Add(pte);
@@ -1351,7 +1358,6 @@ namespace Kaenx.DataContext.Import.Manager
                             Value = para.Value,
                             Options = options,
                             Conditions = paramList,
-                            Hash = hash,
                             HasAccess = hasAccess,
                             IsEnabled = IsCtlEnabled
                         };
@@ -1368,7 +1374,6 @@ namespace Kaenx.DataContext.Import.Manager
                             Option1 = options[0],
                             Option2 = options[1],
                             Conditions = paramList,
-                            Hash = hash,
                             HasAccess = hasAccess,
                             IsEnabled = IsCtlEnabled
                         };
@@ -1385,7 +1390,6 @@ namespace Kaenx.DataContext.Import.Manager
                         Default = para.Value,
                         Value = para.Value,
                         Conditions = paramList,
-                        Hash = hash,
                         HasAccess = hasAccess,
                         IsEnabled = IsCtlEnabled
                     };
@@ -1401,7 +1405,6 @@ namespace Kaenx.DataContext.Import.Manager
                         Default = para.Value,
                         Value = para.Value,
                         Conditions = paramList,
-                        Hash = hash,
                         HasAccess = hasAccess,
                         IsEnabled = IsCtlEnabled
                     };
@@ -1409,7 +1412,7 @@ namespace Kaenx.DataContext.Import.Manager
                     break;
 
                 case ParamTypes.Time:
-                    string[] tags = paraType.Tag1.Split(";");
+                    string[] tags = paraType.Tag1.Split(';');
                     ParamTime pti = new ParamTime()
                     {
                         Id = para.ParameterId,
@@ -1417,7 +1420,6 @@ namespace Kaenx.DataContext.Import.Manager
                         Default = para.Value,
                         Value = para.Value,
                         Conditions = paramList,
-                        Hash = hash,
                         HasAccess = hasAccess,
                         IsEnabled = IsCtlEnabled,
                         Minimum = int.Parse(tags[0]),
@@ -1669,17 +1671,14 @@ namespace Kaenx.DataContext.Import.Manager
 
         public List<ParamCondition> GetConditions(XElement xele)
         {
-            return GetConditions(xele, false).paramList;
+            return GetConditions(xele, false);
         }
 
-        public (List<ParamCondition> paramList, string hash) GetConditions(XElement xele, bool isParam)
+        public List<ParamCondition> GetConditions(XElement xele, bool isParam)
         {
             List<ParamCondition> conds = new List<ParamCondition>();
             try
             {
-                string ids = xele.Attribute("RefId")?.Value ?? "";
-                if (ids == "" && xele.Attribute("Id") != null) ids = xele.Attribute("Id").Value;
-
                 bool finished = false;
                 while (true)
                 {
@@ -1701,8 +1700,6 @@ namespace Kaenx.DataContext.Import.Manager
                                         break;
                                 }
 
-
-                                ids = "d" + ids;
                                 List<string> values = new List<string>();
                                 IEnumerable<XElement> whens = xele.Parent.Elements();
                                 foreach (XElement w in whens)
@@ -1710,20 +1707,19 @@ namespace Kaenx.DataContext.Import.Manager
                                     if (w == xele)
                                         continue;
 
-                                    values.AddRange(w.Attribute("test").Value.Split(" "));
+                                    values.AddRange(w.Attribute("test").Value.Split(' '));
                                 }
                                 cond.Values = string.Join(",", values);
                                 cond.Operation = ConditionOperation.Default;
 
                                 if (cond.Values == "")
                                 {
-                                    ids = "|" + xele.Parent.Attribute("ParamRefId").Value + ".|" + ids;
                                     continue;
                                 }
                             }
                             else if (xele.Attribute("test")?.Value.Contains(" ") == true || int.TryParse(xele.Attribute("test")?.Value, out tempOut))
                             {
-                                cond.Values = string.Join(",", xele.Attribute("test").Value.Split(" "));
+                                cond.Values = string.Join(",", xele.Attribute("test").Value.Split(' '));
                                 cond.Operation = ConditionOperation.IsInValue;
                             }
                             else if (xele.Attribute("test")?.Value.StartsWith("<") == true)
@@ -1774,18 +1770,15 @@ namespace Kaenx.DataContext.Import.Manager
 
                             cond.SourceId = GetItemId(xele.Parent.Attribute("ParamRefId").Value);
                             conds.Add(cond);
-
-                            ids = "|" + cond.SourceId + "." + cond.Values + "|" + ids;
                             break;
 
                         case "Channel":
                         case "ParameterBlock":
-                            ids = xele.Attribute("Id").Value + "|" + ids;
                             finished = true;
                             break;
 
                         case "Dynamic":
-                            return (conds, Convert.ToBase64String(Encoding.UTF8.GetBytes(ids)));
+                            return conds;
                     }
                 }
             }
@@ -1794,7 +1787,7 @@ namespace Kaenx.DataContext.Import.Manager
                 //Log.Error(e, "Generiere Konditionen ist fehlgeschlagen");
                 throw new Exception("Generiere Konditionen ist fehlgeschlagen", e);
             }
-            return (conds, "");
+            return conds;
         }
 
         private void TranslateXml(XElement xml, string selectedLang)
@@ -1982,14 +1975,5 @@ namespace Kaenx.DataContext.Import.Manager
         {
             Archive.Dispose();
         }
-    }
-
-
-
-
-    public class KnxProdAllocators {
-        public int Index {get;set;}
-        public int Increase {get;set;}
-        public bool Started {get;set;} = false;
     }
 }

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using Kaenx.DataContext.Import.Dynamic;
 
@@ -7,7 +9,7 @@ namespace Kaenx.DataContext.Import {
 
     public class FunctionHelper {
 
-        public static byte[] ObjectToByteArray(object obj, string ns = null)
+        public static byte[] ObjectToByteArray(object obj, bool compress = false, string ns = null)
         {
             string text;
 
@@ -26,12 +28,56 @@ namespace Kaenx.DataContext.Import {
             {
                 text = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
             }
+
+            if(compress)
+            {
+                byte[] inputBytes = System.Text.Encoding.UTF8.GetBytes(text);
+                using (var outputStream = new MemoryStream())
+                {
+                    using (var gZipStream = new GZipStream(outputStream, CompressionMode.Compress))
+                        gZipStream.Write(inputBytes, 0, inputBytes.Length);
+
+                    return outputStream.ToArray();
+                }
+
+
+                //MemoryStream ms = new MemoryStream();
+                //GZipStream gzip = new GZipStream(ms, CompressionLevel.Fastest);
+                //StreamWriter sw = new StreamWriter(gzip);
+                //sw.Write(text);
+                //gzip.Dispose();
+                //return ms.ToArray();
+            }
+
             return System.Text.Encoding.UTF8.GetBytes(text);
         }
 
-        public static T ByteArrayToObject<T>(byte[] obj, string ns = null)
+        public static T ByteArrayToObject<T>(byte[] obj, bool compress = false, string ns = null)
         {
-            string text = System.Text.Encoding.UTF8.GetString(obj);
+            string text;
+
+            if (compress)
+            {
+                //    using (var inputStream = new MemoryStream(obj))
+                //    using (var gZipStream = new GZipStream(inputStream, CompressionMode.Decompress))
+                //    using (var streamReader = new StreamReader(gZipStream))
+                //    {
+                //        text = streamReader.ReadToEnd();
+                //    }
+
+
+
+                MemoryStream ms = new MemoryStream(obj);
+                GZipStream gzip = new GZipStream(ms, CompressionMode.Decompress);
+                StreamReader sr = new StreamReader(gzip);
+                text = sr.ReadToEnd();
+                gzip.Dispose();
+            }
+            else
+            {
+                text = System.Text.Encoding.UTF8.GetString(obj);
+            }
+            
 
             if (ns != null)
             {
@@ -48,7 +94,6 @@ namespace Kaenx.DataContext.Import {
             {
                 return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(text);
             }
-
         }
 
         public static bool CheckConditions(List<ParamCondition> conds, Dictionary<int, string> values)

@@ -9,8 +9,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Kaenx.DataContext.Migrations.Project
 {
     [DbContext(typeof(ProjectContext))]
-    [Migration("20210412153437_Deactivate")]
-    partial class Deactivate
+    [Migration("20220104174636_Init")]
+    partial class Init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -27,8 +27,8 @@ namespace Kaenx.DataContext.Migrations.Project
                     b.Property<int>("DeviceId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ParamId")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("ParamId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("StateId")
                         .HasColumnType("INTEGER");
@@ -47,8 +47,8 @@ namespace Kaenx.DataContext.Migrations.Project
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ComId")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("ComId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("DeviceId")
                         .HasColumnType("INTEGER");
@@ -67,11 +67,14 @@ namespace Kaenx.DataContext.Migrations.Project
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ApplicationId")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("INTEGER");
 
-                    b.Property<string>("DeviceId")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("DeviceId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("HardwareId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Id")
                         .HasColumnType("INTEGER");

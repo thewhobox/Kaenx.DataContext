@@ -15,9 +15,7 @@ namespace Kaenx.DataContext.Migrations.Catalog
                         .Annotation("Sqlite:Autoincrement", true),
                     ApplicationId = table.Column<int>(nullable: false),
                     LoadProcedures = table.Column<byte[]>(nullable: true),
-                    Dynamic = table.Column<byte[]>(nullable: true),
                     Bindings = table.Column<byte[]>(nullable: true),
-                    ParameterAll = table.Column<byte[]>(nullable: true),
                     ComsAll = table.Column<byte[]>(nullable: true),
                     ComsDefault = table.Column<byte[]>(nullable: true),
                     ParamsHelper = table.Column<byte[]>(nullable: true),
@@ -35,8 +33,6 @@ namespace Kaenx.DataContext.Migrations.Catalog
                     UId = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Id = table.Column<int>(nullable: false),
-                    BindedId = table.Column<int>(nullable: false),
-                    BindedDefaultText = table.Column<string>(nullable: true),
                     ApplicationId = table.Column<int>(nullable: false),
                     Text = table.Column<string>(maxLength: 100, nullable: true),
                     FunctionText = table.Column<string>(maxLength: 100, nullable: true),
@@ -202,7 +198,7 @@ namespace Kaenx.DataContext.Migrations.Catalog
                     ManuId = table.Column<int>(nullable: false),
                     Name = table.Column<string>(maxLength: 100, nullable: true),
                     Version = table.Column<int>(nullable: false),
-                    Number = table.Column<int>(nullable: false)
+                    Number = table.Column<string>(maxLength: 30, nullable: true)
                 },
                 constraints: table =>
                 {

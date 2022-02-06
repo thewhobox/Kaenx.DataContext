@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Kaenx.DataContext.Migrations.Catalog
 {
     [DbContext(typeof(CatalogContext))]
-    [Migration("20210726145017_Init")]
+    [Migration("20211128131744_Init")]
     partial class Init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -39,13 +39,7 @@ namespace Kaenx.DataContext.Migrations.Catalog
                     b.Property<byte[]>("ComsDefault")
                         .HasColumnType("BLOB");
 
-                    b.Property<byte[]>("Dynamic")
-                        .HasColumnType("BLOB");
-
                     b.Property<byte[]>("LoadProcedures")
-                        .HasColumnType("BLOB");
-
-                    b.Property<byte[]>("ParameterAll")
                         .HasColumnType("BLOB");
 
                     b.Property<byte[]>("ParamsHelper")
@@ -63,12 +57,6 @@ namespace Kaenx.DataContext.Migrations.Catalog
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("ApplicationId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("BindedDefaultText")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("BindedId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Datapoint")
@@ -430,8 +418,9 @@ namespace Kaenx.DataContext.Migrations.Catalog
                         .HasColumnType("TEXT")
                         .HasMaxLength(100);
 
-                    b.Property<int>("Number")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Number")
+                        .HasColumnType("TEXT")
+                        .HasMaxLength(30);
 
                     b.Property<int>("Version")
                         .HasColumnType("INTEGER");

@@ -11,6 +11,7 @@ namespace Kaenx.DataContext.Project
         public int ProjectId { get; set; }
         public string Name { get; set; }
         public int DeviceId { get; set; }
+        public int HardwareId { get; set; }
         public int ApplicationId { get; set; }
         public bool LoadedGA { get; set; }
         public bool LoadedApp { get; set; }

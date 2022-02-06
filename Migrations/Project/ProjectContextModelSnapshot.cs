@@ -25,8 +25,8 @@ namespace Kaenx.DataContext.Migrations.Project
                     b.Property<int>("DeviceId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ParamId")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("ParamId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("StateId")
                         .HasColumnType("INTEGER");
@@ -45,8 +45,8 @@ namespace Kaenx.DataContext.Migrations.Project
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ComId")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("ComId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("DeviceId")
                         .HasColumnType("INTEGER");
@@ -65,11 +65,14 @@ namespace Kaenx.DataContext.Migrations.Project
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ApplicationId")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("INTEGER");
 
-                    b.Property<string>("DeviceId")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("DeviceId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("HardwareId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Id")
                         .HasColumnType("INTEGER");

@@ -48,7 +48,7 @@ namespace Kaenx.DataContext.Catalog
 
         public override string ToString()
         {
-            return "ParameterId = " + Id;
+            return "ParameterId = " + ParameterId;
         }
     }
 

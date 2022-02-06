@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
+using System.Diagnostics;
 
 namespace Kaenx.DataContext.Import.Manager
 {
@@ -23,6 +24,7 @@ namespace Kaenx.DataContext.Import.Manager
         private Dictionary<int, AppParameter> AppParas;
         private Dictionary<int, AppParameterTypeViewModel> AppParaTypes;
         private Dictionary<int, AppComObject> ComObjects;
+        private List<ComBinding> ComBindings;
         private List<AssignParameter> Assignments;
         private Dictionary<string, int> parameterTypeIds;
         private int counterUnion = 1;
@@ -34,17 +36,15 @@ namespace Kaenx.DataContext.Import.Manager
 
         public override bool CheckManager()
         {
-            return File.Exists(_path) && _path.EndsWith(".knxprod");
+            return File.Exists(_path) && _path.ToLower().EndsWith(".knxprod");
         }
 
-
-        public override void Begin()
-        {
-            Archive = ZipFile.OpenRead(_path);
-        }
 
         public override List<string> GetLanguages()
         {
+            if(Archive == null)
+                Archive = ZipFile.OpenRead(_path);
+
             List<string> langs = new List<string>();
 
             foreach (ZipArchiveEntry entryTemp in Archive.Entries)
@@ -92,11 +92,17 @@ namespace Kaenx.DataContext.Import.Manager
                 }
             }
 
+            Archive.Dispose();
+            Archive = null;
+
             return langs;
         }
 
         public override List<ImportDevice> GetDeviceList()
         {
+            if (Archive == null)
+                Archive = ZipFile.OpenRead(_path);
+
             List<ImportDevice> devices = new List<ImportDevice>();
             List<string> manus = new List<string>();
 
@@ -115,42 +121,72 @@ namespace Kaenx.DataContext.Import.Manager
 
             foreach (string manName in manus)
             {
-                ZipArchiveEntry entry = Archive.GetEntry(manName + "/Catalog.xml");
-                using(Stream entryStream = entry.Open())
+                XElement catXML = XDocument.Load(Archive.GetEntry(manName + "/Catalog.xml").Open()).Root;
+                XElement hardXML = XDocument.Load(Archive.GetEntry(manName + "/Hardware.xml").Open()).Root;
+                TranslateXml(catXML, _language);
+                TranslateXml(hardXML, _language);
+                currentNamespace = catXML.Name.NamespaceName;
+
+                IEnumerable<XElement> catalogItems = catXML.Descendants(GetXName("CatalogItem"));
+                catalogItems = catalogItems.OrderBy(c => c.Attribute("Name").Value);
+                Dictionary<string, string> images = new Dictionary<string, string>();
+
+                if (File.Exists("Import/Images/KNX/" + manName + ".json"))
                 {
-                    XElement catXML = XDocument.Load(entryStream).Root;
-                    TranslateXml(catXML, _language);
-                    string ns = catXML.Name.NamespaceName;
+                    images = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText("Import/Images/KNX/" + manName + ".json"));
+                }
 
-                    IEnumerable<XElement> catalogItems = catXML.Descendants(XName.Get("CatalogItem", ns));
-                    catalogItems = catalogItems.OrderBy(c => c.Attribute("Name").Value);
-
-
-                    foreach(XElement item in catalogItems)
+                foreach(XElement item in catalogItems)
+                {
+                    ImportDevice device = new ImportDevice()
                     {
-                        ImportDevice device = new ImportDevice()
-                        {
-                            Id = item.Attribute("Id").Value,
-                            Name = item.Attribute("Name").Value,
-                            Description = item.Attribute("VisibleDescription")?.Value.Replace(Environment.NewLine, " "),
-                            Additional1 = item.Attribute("ProductRefId").Value,
-                            Additional2 = item.Attribute("Hardware2ProgramRefId").Value
-                        };
-                        devices.Add(device);
+                        Id = item.Attribute("Id").Value,
+                        Name = item.Attribute("Name").Value,
+                        Description = item.Attribute("VisibleDescription")?.Value.Replace(Environment.NewLine, " "),
+                        Additional1 = item.Attribute("ProductRefId").Value,
+                        Additional2 = item.Attribute("Hardware2ProgramRefId").Value,
+                        ApplicationName = ""
+                    };
+
+                    XElement prod = hardXML.Descendants().Single(d => d.Attribute("Id")?.Value == device.Additional1);
+                    if(images.ContainsKey(device.Additional1))
+                    {
+                        device.ImageUrl = images[device.Additional1];
+                    } else
+                    {
+                        device.ImageUrl = "https://th.bing.com/th/id/OIP.1OCQbyxf7bEvykoY1uiinwAAAA?pid=ImgDet&rs=1";
                     }
+                    prod = hardXML.Descendants().Single(d => d.Attribute("Id")?.Value == device.Additional2);
+                    foreach(XElement xapp in prod.Descendants(GetXName("ApplicationProgramRef")))
+                    {
+                        XElement xapp2 = XDocument.Load(Archive.GetEntry(manName + "/" + xapp.Attribute("RefId").Value + ".xml").Open()).Root;
+                        //Todo get shorter translation of application
+                        TranslateXml(xapp2, _language);
+                        xapp2 = xapp2.Element(GetXName("ManufacturerData")).Element(GetXName("Manufacturer")).Element(GetXName("ApplicationPrograms")).Element(GetXName("ApplicationProgram"));
+                        device.ApplicationName += " - " + xapp2.Attribute("Name").Value;
+                    }
+                    if (!string.IsNullOrEmpty(device.ApplicationName))
+                        device.ApplicationName = device.ApplicationName.Substring(3);
+
+                    devices.Add(device);
                 }
             }
+
+            Archive.Dispose();
+            Archive = null;
 
             return devices;
         }
 
         public override void StartImport(List<ImportDevice> devices, CatalogContext context)
         {
+            if (Archive == null)
+                Archive = ZipFile.OpenRead(_path);
+
             _context = context;
             UpdateKnxMaster();
 
             foreach(ImportDevice importDevice in devices) {
-                OnProgressChanged(0);
                 OnDeviceNameChanged(importDevice.Name);
                 OnStateChanged("Importiere Gerät");
 
@@ -191,6 +227,9 @@ namespace Kaenx.DataContext.Import.Manager
             }
 
             _context.SaveChanges();
+
+            Archive.Dispose();
+            Archive = null;
         }
 
         private void UpdateKnxMaster() {
@@ -299,6 +338,18 @@ namespace Kaenx.DataContext.Import.Manager
             counterComObjects = 0;
             ImportAppStatic(xstatic, app.Id);
 
+            if(_context.AppParameters.Any(p => p.ApplicationId == app.Id))
+            {
+                int max = _context.AppParameters.Where(p => p.ApplicationId == app.Id).OrderByDescending(p => p.ParameterId).First().ParameterId;
+                counterParameter = ++max;
+            }
+
+            if(_context.AppComObjects.Any(c => c.ApplicationId == app.Id))
+            {
+                int max = _context.AppComObjects.Where(c => c.ApplicationId == app.Id).OrderByDescending(c => c.Id).First().Id;
+                counterComObjects = ++max;
+            }
+
             if(xapp.Element(GetXName("ModuleDefs")) != null) {
                 ImportModuleDefs(xapp, app.Id);
             }
@@ -315,7 +366,6 @@ namespace Kaenx.DataContext.Import.Manager
 
 
 
-            
             foreach(XElement xele in xdyn.Descendants(GetXName("Channel")))
             {
                 if(xele.Attribute("Text")?.Value == "")
@@ -370,10 +420,11 @@ namespace Kaenx.DataContext.Import.Manager
 
 
 
-
+            Assignments = new List<AssignParameter>();
             AppParas = new Dictionary<int, AppParameter>();
             AppParaTypes = new Dictionary<int, AppParameterTypeViewModel>();
             ComObjects = new Dictionary<int, AppComObject>();
+            ComBindings = new List<ComBinding>();
 
             foreach (AppParameter para in _context.AppParameters.Where(p => p.ApplicationId == appId))
                 AppParas.Add(para.ParameterId, para);
@@ -459,18 +510,67 @@ namespace Kaenx.DataContext.Import.Manager
                 GetChildItems(pb, xele, textRefId, groupText);
             }
 
-            //TODO generate default visibility
+
+            
+
+
+            Dictionary<int, string> values = new Dictionary<int, string>();
+            foreach(AppParameter para in AppParas.Values)
+            {
+                values[para.ParameterId] = para.Value;
+            }
+            //TODO Assignments beachten
+
+            List<int> defaultComs = new List<int>();
+            foreach(AppComObject com in ComObjects.Values)
+            {
+                if (defaultComs.Contains(com.UId)) continue;
+
+                if (!ComBindings.Any(c => c.ComId == com.Id))
+                    defaultComs.Add(com.UId);
+                else
+                {
+                    foreach(ComBinding bind in ComBindings.Where(c => c.ComId == com.Id))
+                    {
+                        if(FunctionHelper.CheckConditions(bind.Conditions, values))
+                        {
+                            defaultComs.Add(com.UId);
+                            break;
+                        }
+                    }
+                }
+
+            }
+
+            foreach (IDynChannel ch in Channels)
+            {
+                if(ch.HasAccess)
+                    ch.IsVisible = FunctionHelper.CheckConditions(ch.Conditions, values);
+                foreach (ParameterBlock pb in ch.Blocks)
+                {
+                    if (pb.HasAccess)
+                        pb.IsVisible = FunctionHelper.CheckConditions(pb.Conditions, values);
+
+                    foreach (IDynParameter para in pb.Parameters)
+                    {
+                        if (para.HasAccess)
+                            para.IsVisible = FunctionHelper.CheckConditions(para.Conditions, values);
+                    }
+                }
+            }
 
             AppAdditional adds = new AppAdditional() {
                 ApplicationId = appId
             };
-            adds.Bindings = FunctionHelper.ObjectToByteArray(Bindings);
-            adds.ParamsHelper = FunctionHelper.ObjectToByteArray(Channels, "Kaenx.DataContext.Import.Dynamic");
-            adds.Assignments = FunctionHelper.ObjectToByteArray(Assignments);
+            adds.Bindings = FunctionHelper.ObjectToByteArray(Bindings, true);
+            adds.ParamsHelper = FunctionHelper.ObjectToByteArray(Channels, true, "Kaenx.DataContext.Import.Dynamic");
+            adds.Assignments = FunctionHelper.ObjectToByteArray(Assignments, true);
+            adds.ComsAll = FunctionHelper.ObjectToByteArray(ComBindings, true);
+            adds.ComsDefault = System.Text.Encoding.UTF8.GetBytes(string.Join(",", defaultComs));
 
-
-            //TODO generate default comobjs
-
+            XElement xload = xdyn.Parent.Element(GetXName("Static")).Element(GetXName("LoadProcedures"));
+            if (xload != null)
+                adds.LoadProcedures = Encoding.UTF8.GetBytes(xload.ToString());
 
             _context.AppAdditionals.Add(adds);
         }
@@ -506,7 +606,7 @@ namespace Kaenx.DataContext.Import.Manager
                 };
                 //Text beinhaltet ein Binding zu einem Parameter
                 if(g2.Contains(":")){
-                    string[] opts = g2.Split(":");
+                    string[] opts = g2.Split(':');
                     text = text.Replace(match.Groups[0].Value, opts[1]);
                     bind.SourceId = opts[0] == "0" ? -1 : int.Parse(opts[0]);
                     bind.DefaultText = opts[1];
@@ -517,23 +617,36 @@ namespace Kaenx.DataContext.Import.Manager
                 }
                 
                 if(bind.SourceId == -1) {
-                    XElement xstatic = xele;
-                    while(true) {
-                        xstatic = xstatic.Parent;
-                        if(xstatic.Name.LocalName == "Static") break;
-                    }
-                    if(xstatic.Parent.Element(GetXName("Dynamic")) != null) {
-                        XElement xdyn = xstatic.Parent.Element(GetXName("Dynamic"));
-                        XElement xref = xdyn.Descendants(GetXName("ComObjectRefRef")).First(co => co.Attribute("RefId").Value == GetAttributeAsString(xele, "Id"));
-
-                        while(true) {
-                            xref = xref.Parent;
-                            if(xref.Name.LocalName == "ParameterBlock") break;
-                        }
-                        string bindId = GetAttributeAsString(xref, "TextParameterRefId");
-                        if(string.IsNullOrEmpty(bindId))
+                    if(xele.Attribute("TextParameterRefId") != null)
+                    {
+                        string bindId = GetAttributeAsString(xele, "TextParameterRefId");
+                        if (string.IsNullOrEmpty(bindId))
                             throw new Exception("Kein TextParameterRefId für KO gefunden");
                         bind.SourceId = GetItemId(bindId);
+                    } else
+                    {
+                        throw new Exception("Object enthält dynamischen Text mit Referenz 0, hat aber kein Attribut mit TextParameterRefId");
+                        //XElement xstatic = xele;
+                        //while (true)
+                        //{
+                        //    xstatic = xstatic.Parent;
+                        //    if (xstatic.Name.LocalName == "Static") break;
+                        //}
+                        //if (xstatic.Parent.Element(GetXName("Dynamic")) != null)
+                        //{
+                        //    XElement xdyn = xstatic.Parent.Element(GetXName("Dynamic"));
+                        //    XElement xref = xdyn.Descendants(GetXName("ComObjectRefRef")).First(co => co.Attribute("RefId").Value == GetAttributeAsString(xele, "Id"));
+
+                        //    while (true)
+                        //    {
+                        //        xref = xref.Parent;
+                        //        if (xref.Name.LocalName == "ParameterBlock") break;
+                        //    }
+                        //    string bindId = GetAttributeAsString(xref, "TextParameterRefId");
+                        //    if (string.IsNullOrEmpty(bindId))
+                        //        throw new Exception("Kein TextParameterRefId für KO gefunden");
+                        //    bind.SourceId = GetItemId(bindId);
+                        //}
                     }
                 }
                 
@@ -687,7 +800,6 @@ namespace Kaenx.DataContext.Import.Manager
             
             Regex reg = new Regex("{{(.*)}}");
 
-            int blockCounter = 1;
             foreach(XElement xobj in xobjs){
                 string temp = xobj.Attribute("Text").Value;
                 if(reg.IsMatch(temp)) {
@@ -778,10 +890,12 @@ namespace Kaenx.DataContext.Import.Manager
                         AppSegmentViewModel ars = new AppSegmentViewModel();
 
                         ars.ApplicationId = appId;
-                        ars.SegmentId = GetItemHexId(GetAttributeAsString(seg, "Id").Substring(0,27));
+                        ars.SegmentId = GetItemHexId(GetAttributeAsString(seg, "Id"));
                         ars.Offset = GetAttributeAsInt(seg, "Offset");
                         ars.Size = GetAttributeAsInt(seg, "Size");
                         ars.LsmId = GetAttributeAsInt(seg, "LoadStateMachine");
+                        ars.Data = seg.Element(GetXName("Data"))?.Value;
+                        ars.Mask = seg.Element(GetXName("Mask"))?.Value;
                         _context.AppSegments.Add(ars);
                         break;
 
@@ -803,9 +917,10 @@ namespace Kaenx.DataContext.Import.Manager
 
             foreach(XElement xparaType in xparaTypes) {
                 AppParameterTypeViewModel model = new AppParameterTypeViewModel() {
-                    Name = GetAttributeAsString(xparaType, "Name"),
+                    //Name = GetAttributeAsString(xparaType, "Name"),
                     ApplicationId = appId
                 };
+                model.Name = GetAttributeAsString(xparaType, "Id").Substring(GetAttributeAsString(xparaType, "Id").LastIndexOf("-") + 1);
 
                 bool modelAdded = false;
                 XElement child = xparaType.Elements().ElementAt(0);
@@ -918,7 +1033,7 @@ namespace Kaenx.DataContext.Import.Manager
 
 
             foreach(AppParameterTypeViewModel model in _context.AppParameterTypes.Where(pt => pt.ApplicationId == appId)) {
-                parameterTypeIds.Add(EscapeString(model.Name), model.Id);
+                parameterTypeIds.Add(model.Name, model.Id);
             }
         }
 
@@ -1117,63 +1232,16 @@ namespace Kaenx.DataContext.Import.Manager
 
         private void ParseComObject(XElement xele, int textRefId, string groupText)
         {
-            //TODO check later how we solve this
-            /*if (updatedComs.Contains(GetItemId(xele.Attribute("RefId").Value))) return;
+            List<ParamCondition> conds = GetConditions(xele);
 
-            bool changed = false;
-            AppComObject com = ComObjects[GetItemId(xele.Attribute("RefId").Value)];
-
-
-            if (com.BindedId == -2 && textRefId == -2 && string.IsNullOrEmpty(groupText)) return;
-
-            if (com.BindedId == -1)
+            if(conds.Count > 0)
             {
-                com.BindedId = textRefId;
-                changed = true;
-            }
-
-            if (!string.IsNullOrEmpty(groupText))
-            {
-                com.Group = groupText;
-                changed = true;
-            }
-
-            if(com.BindedId != -2)
-            {
-                ParamBinding bind = new ParamBinding()
+                ComBindings.Add(new ComBinding()
                 {
-                    Hash = "CO:" + com.Id,
-                    SourceId = com.BindedId
-                };
-
-                Regex reg = new Regex("{{((.+):(.+))}}");
-                Match m = reg.Match(com.Text);
-                if (m.Success)
-                {
-                    bind.DefaultText = m.Groups[3].Value;
-                    com.Text = com.Text.Replace(m.Value, "{{dyn}}");
-                    changed = true;
-                }
-                else
-                {
-                    reg = new Regex("{{(.+)}}");
-                    m = reg.Match(com.Text);
-                    if (m.Success)
-                    {
-                        bind.DefaultText = "";
-                        com.Text = com.Text.Replace(m.Value, "{{dyn}}");
-                        changed = true;
-                    }
-                }
-                Bindings.Add(bind);
+                    ComId = GetItemId(xele.Attribute("RefId").Value),
+                    Conditions = conds
+                });
             }
-
-            if (changed)
-            {
-                contextC.AppComObjects.Update(com);
-                updatedComs.Add(com.Id);
-            }
-            */
         }
 
         private void ParseSeparator(XElement xele, ParameterBlock block)
@@ -1409,7 +1477,7 @@ namespace Kaenx.DataContext.Import.Manager
                     break;
 
                 case ParamTypes.Time:
-                    string[] tags = paraType.Tag1.Split(";");
+                    string[] tags = paraType.Tag1.Split(';');
                     ParamTime pti = new ParamTime()
                     {
                         Id = para.ParameterId,
@@ -1496,7 +1564,7 @@ namespace Kaenx.DataContext.Import.Manager
                 xobjs = xstatic.Element(GetXName("ComObjects"));
             
             Dictionary<string, AppComObject> comObjects = new Dictionary<string, AppComObject>();
-            
+
             foreach(XElement xobj in xobjs.Elements()) {
                 AppComObject cobj = new AppComObject
                 {
@@ -1524,7 +1592,21 @@ namespace Kaenx.DataContext.Import.Manager
                 comObjects.Add(GetAttributeAsString(xobj, "Id"), cobj);
             }
 
+            List<string> toImport = new List<string>();
+
+            foreach(XElement xrcom in xstatic.Parent.Element(GetXName("Dynamic")).Descendants(GetXName("ComObjectRefRef")))
+            {
+                toImport.Add(xrcom.Attribute("RefId").Value);
+            }
+
+
             foreach(XElement xref in xrefs.Elements()) {
+                if (!toImport.Contains(xref.Attribute("Id").Value))
+                {
+                    Debug.WriteLine($"Nicht verwendetes KO: {xref.Attribute("Id").Value}");
+                    continue;
+                }
+
                 AppComObject com = new AppComObject();
                 com.LoadComp(comObjects[GetAttributeAsString(xref, "RefId")]);
                 com.Id = GetItemId(GetAttributeAsString(xref, "Id"));
@@ -1541,7 +1623,7 @@ namespace Kaenx.DataContext.Import.Manager
                 if(HasAttribute(xref, "DatapointType")) com.SetDatapoint(GetAttributeAsString(xref, "DatapointType"));
                 if(HasAttribute(xref, "Size")) com.SetSize(GetAttributeAsString(xref, "Size"));
 
-                if(idMapper != null) {
+                if (idMapper != null) {
                     int oldId = com.Id;
                     com.Id = counterComObjects++;
                     idMapper.Add("c" + oldId, com.Id);
@@ -1567,7 +1649,8 @@ namespace Kaenx.DataContext.Import.Manager
             _context.SaveChanges();
         }
 
-        private void ParseParameter(Dictionary<int, AppParameter> parameters, Dictionary<string, string> args, XElement xpara, XElement xmem = null, int unionId = 0) {
+        private void ParseParameter(Dictionary<int, AppParameter> parameters, Dictionary<string, string> args, XElement xpara, XElement xmem = null, int unionId = 0)
+        {
             AppParameter param = new AppParameter
             {
                 ParameterId = GetItemId(xpara.Attribute("Id").Value),
@@ -1576,7 +1659,7 @@ namespace Kaenx.DataContext.Import.Manager
                 UnionId = unionId,
                 UnionDefault = (GetAttributeAsString(xpara, "DefaultUnionParameter") == "true" || GetAttributeAsString(xpara, "DefaultUnionParameter") == "1")
             };
-            param.ParameterTypeId = parameterTypeIds[GetAttributeAsString(xpara, "ParameterType").Substring(GetAttributeAsString(xpara, "ParameterType").LastIndexOf("-")+1)];
+            param.ParameterTypeId = parameterTypeIds[GetAttributeAsString(xpara, "ParameterType").Substring(GetAttributeAsString(xpara, "ParameterType").LastIndexOf("-") + 1)];
 
             string suffix = xpara.Attribute("SuffixText")?.Value;
             if (!string.IsNullOrEmpty(suffix)) param.SuffixText = suffix;
@@ -1599,10 +1682,11 @@ namespace Kaenx.DataContext.Import.Manager
             {
                 if(xmem.Name.LocalName == "Memory") {
                     string codeseg = GetAttributeAsString(xmem, "CodeSegment");
-                    if(codeseg.Contains("_RS-"))
-                        param.SegmentId = GetItemHexId(codeseg.Substring(0,27));
-                    else
-                        param.SegmentId = GetItemHexId(codeseg.Substring(0,29));
+                    //if(codeseg.Contains("_RS-"))
+                    //    param.SegmentId = GetItemHexId(codeseg.Substring(0,27));
+                    //else
+                    //    param.SegmentId = GetItemHexId(codeseg.Substring(0,29));
+                    param.SegmentId = GetItemHexId(codeseg);
                     param.Offset = GetAttributeAsInt(xmem, "Offset");
                     param.OffsetBit = GetAttributeAsInt(xmem, "BitOffset");
                     param.SegmentType = SegmentTypes.Memory;
@@ -1632,7 +1716,7 @@ namespace Kaenx.DataContext.Import.Manager
                 AppParameter final = new AppParameter();
                 final.LoadPara(old);
 
-                if(idMapper != null) {
+                if (idMapper != null) {
                     pId = counterParameter++;
                     idMapper.Add("p" + GetItemId(GetAttributeAsString(xref, "RefId")), pId);
                 }
@@ -1710,7 +1794,7 @@ namespace Kaenx.DataContext.Import.Manager
                                     if (w == xele)
                                         continue;
 
-                                    values.AddRange(w.Attribute("test").Value.Split(" "));
+                                    values.AddRange(w.Attribute("test").Value.Split(' '));
                                 }
                                 cond.Values = string.Join(",", values);
                                 cond.Operation = ConditionOperation.Default;
@@ -1723,7 +1807,7 @@ namespace Kaenx.DataContext.Import.Manager
                             }
                             else if (xele.Attribute("test")?.Value.Contains(" ") == true || int.TryParse(xele.Attribute("test")?.Value, out tempOut))
                             {
-                                cond.Values = string.Join(",", xele.Attribute("test").Value.Split(" "));
+                                cond.Values = string.Join(",", xele.Attribute("test").Value.Split(' '));
                                 cond.Operation = ConditionOperation.IsInValue;
                             }
                             else if (xele.Attribute("test")?.Value.StartsWith("<") == true)
@@ -1852,8 +1936,10 @@ namespace Kaenx.DataContext.Import.Manager
         }
 
 
-        public string EscapeString(string input) {
+        public string EscapeString(string input)
+        {
             input = input.Replace("%", "%25");
+            input = input.Replace(".", "%2E");
             input = input.Replace(" ", "%20");
             input = input.Replace("!", "%21");
             input = input.Replace("\"", "%22");
@@ -1864,7 +1950,6 @@ namespace Kaenx.DataContext.Import.Manager
             input = input.Replace(")", "%29");
             input = input.Replace("+", "%2B");
             input = input.Replace("-", "%2D");
-            input = input.Replace(".", "%2E");
             input = input.Replace("/", "%2F");
             input = input.Replace(":", "%3A");
             input = input.Replace(";", "%3B");
@@ -1934,12 +2019,17 @@ namespace Kaenx.DataContext.Import.Manager
 
         private int GetItemId(string id)
         {
-            return int.Parse(id.Substring(id.LastIndexOf("-") + 1));
+            id = id.Substring(id.LastIndexOf("-") + 1);
+            int id2;
+            if (!int.TryParse(id, out id2))
+                id2 = 999999;
+            return id2;
         }
 
         private int GetItemHexId(string id)
         {
-            return int.Parse(id.Substring(id.LastIndexOf("-") + 1), System.Globalization.NumberStyles.HexNumber);
+            string[] splits = id.Split('-');
+            return int.Parse(splits[5], System.Globalization.NumberStyles.HexNumber);
         }
 
 

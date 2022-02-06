@@ -13,7 +13,7 @@ namespace Kaenx.DataContext.Import
         {
             IManager manager = null;
             var q = from t in Assembly.GetExecutingAssembly().GetTypes()
-                   where t.IsClass && t.IsAbstract == false && t.IsNested == false && t.Namespace == "Kaenx.DataContext.Import.Manager"
+                   where t.BaseType == typeof(IManager) && t.Namespace == "Kaenx.DataContext.Import.Manager"
                     select t;
 
             foreach (Type t in q.ToList())

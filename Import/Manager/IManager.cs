@@ -10,10 +10,8 @@ namespace Kaenx.DataContext.Import.Manager
         public string _language { get; set; } = "de-de";
         public string _path { get; set; }
 
-        public delegate void ProcessChangedHandler(double percentage);
         public delegate void DeviceNameChanged(string newName);
 
-        public event ProcessChangedHandler ProcessChanged;
         public event DeviceNameChanged DeviceChanged;
         public event DeviceNameChanged StateChanged;
 
@@ -23,13 +21,7 @@ namespace Kaenx.DataContext.Import.Manager
             _path = path;
         }
 
-
         public abstract bool CheckManager();
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public abstract void Begin();
 
         /// <summary>
         /// Set lanugage so the files can be translated
@@ -70,11 +62,6 @@ namespace Kaenx.DataContext.Import.Manager
         public void OnStateChanged(string name)
         {
             StateChanged?.Invoke(name);
-        }
-
-        public void OnProgressChanged(double percentage)
-        {
-            ProcessChanged?.Invoke(percentage);
         }
     }
 }

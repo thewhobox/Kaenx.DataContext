@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Kaenx.DataContext.Migrations.Project
@@ -15,7 +14,7 @@ namespace Kaenx.DataContext.Migrations.Project
                     Id = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     DeviceId = table.Column<int>(nullable: false),
-                    ParamId = table.Column<string>(nullable: true),
+                    ParamId = table.Column<int>(nullable: false),
                     StateId = table.Column<int>(nullable: false),
                     Value = table.Column<string>(nullable: true)
                 },
@@ -30,7 +29,7 @@ namespace Kaenx.DataContext.Migrations.Project
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    ComId = table.Column<string>(nullable: true),
+                    ComId = table.Column<int>(nullable: false),
                     DeviceId = table.Column<int>(nullable: false),
                     Groups = table.Column<string>(nullable: true)
                 },
@@ -49,12 +48,15 @@ namespace Kaenx.DataContext.Migrations.Project
                     ParentId = table.Column<int>(nullable: false),
                     ProjectId = table.Column<int>(nullable: false),
                     Name = table.Column<string>(nullable: true),
-                    DeviceId = table.Column<string>(nullable: true),
-                    ApplicationId = table.Column<string>(nullable: true),
+                    DeviceId = table.Column<int>(nullable: false),
+                    HardwareId = table.Column<int>(nullable: false),
+                    ApplicationId = table.Column<int>(nullable: false),
                     LoadedGA = table.Column<bool>(nullable: false),
                     LoadedApp = table.Column<bool>(nullable: false),
                     LoadedPA = table.Column<bool>(nullable: false),
-                    Serial = table.Column<byte[]>(nullable: true)
+                    Serial = table.Column<byte[]>(nullable: true),
+                    IsDeactivated = table.Column<bool>(nullable: false),
+                    LastGroupCount = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -123,19 +125,6 @@ namespace Kaenx.DataContext.Migrations.Project
                 {
                     table.PrimaryKey("PK_States", x => x.Id);
                 });
-
-
-            if(migrationBuilder.ActiveProvider == "Pomelo.EntityFrameworkCore.MySql")
-            {
-                migrationBuilder.Sql("ALTER TABLE ChangesParam MODIFY Id INT(11) AUTO_INCREMENT;");
-                migrationBuilder.Sql("ALTER TABLE ComObjects MODIFY Id INT(11) AUTO_INCREMENT;");
-                migrationBuilder.Sql("ALTER TABLE LineDevices MODIFY UId INT(11) AUTO_INCREMENT;");
-                migrationBuilder.Sql("ALTER TABLE LinesMain MODIFY UId INT(11) AUTO_INCREMENT;");
-                migrationBuilder.Sql("ALTER TABLE LinesMiddle MODIFY UId INT(11) AUTO_INCREMENT;");
-                migrationBuilder.Sql("ALTER TABLE Projects MODIFY Id INT(11) AUTO_INCREMENT;");
-                migrationBuilder.Sql("ALTER TABLE States MODIFY Id INT(11) AUTO_INCREMENT;");
-            }
-            Debug.WriteLine(migrationBuilder.ActiveProvider);
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

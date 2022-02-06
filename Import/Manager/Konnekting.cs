@@ -19,17 +19,14 @@ namespace Kaenx.DataContext.Import.Manager
         private CatalogContext _context { get; set; }
 
 
-        public Konnekting(string path) : base(path) { }
+        public Konnekting(string path) : base(path) 
+        {
+            kDevice = XDocument.Load(path).Root;
+        }
         
         public override bool CheckManager()
         {
             return File.Exists(_path) && _path.EndsWith(".kdevice.xml");
-        }
-
-
-        public override void Begin()
-        {
-            kDevice = XDocument.Load(_path).Root;
         }
 
         public override List<string> GetLanguages()
@@ -299,7 +296,7 @@ namespace Kaenx.DataContext.Import.Manager
                     }
 
                     CalcDefaultVisibility(channel, Id2Values);
-                    adds.ParamsHelper = FunctionHelper.ObjectToByteArray(Channels, "Kaenx.DataContext.Import.Dynamic");
+                    adds.ParamsHelper = FunctionHelper.ObjectToByteArray(Channels, true, "Kaenx.DataContext.Import.Dynamic");
                     
                     List<int> comsDefault = new List<int>();
                     foreach(XElement xcom in xdevice.Element(GetXName("CommObjects")).Elements()) {

@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.IO;
+using System.IO.Compression;
+using System.Text;
 using Kaenx.DataContext.Import.Dynamic;
 
 namespace Kaenx.DataContext.Import {

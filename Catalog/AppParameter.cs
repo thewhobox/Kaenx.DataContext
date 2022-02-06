@@ -18,8 +18,6 @@ namespace Kaenx.DataContext.Catalog
         [MaxLength(20)]
         public string SuffixText { get; set; }
         public string Value { get; set; }
-        [MaxLength(40)]
-        public string Hash { get; set; }
 
         public int SegmentId { get; set; } = -1;
         public SegmentTypes SegmentType { get; set; }

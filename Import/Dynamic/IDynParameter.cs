@@ -15,8 +15,6 @@ namespace Kaenx.DataContext.Import.Dynamic
         int Id { get; set; }
         [JsonProperty("t")]
         string Text { get; set; }
-        [JsonProperty("h")]
-        string Hash { get; set; }
         [JsonProperty("s")]
         string SuffixText { get; set; }
         [JsonProperty("v")]

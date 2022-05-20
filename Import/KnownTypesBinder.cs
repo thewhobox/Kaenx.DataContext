@@ -32,7 +32,8 @@ public class KnownTypesBinder : ISerializationBinder
         {"TablePosition", "j"},
         {"TableColumn", "k"},
         {"TableRow", "l"},
-        {"ViewParamModel", "m"}
+        {"ViewParamModel", "m"},
+        {"ComBinding", "n"}
     };
     
     public KnownTypesBinder(string ns) {

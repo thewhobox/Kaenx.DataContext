@@ -34,10 +34,9 @@ namespace Kaenx.DataContext.Import.Manager
             return new List<string>() { "de-de" };
         }
 
-        public override List<ImportDevice> GetDeviceList()
+        public override List<ImportDevice> GetDeviceList(CatalogContext context = null)
         {
             List<ImportDevice> devices = new List<ImportDevice>();
-
 
             foreach(XElement xdev in kDevice.Descendants(GetXName("Device")))
             {

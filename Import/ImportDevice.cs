@@ -14,6 +14,7 @@ namespace Kaenx.DataContext.Import
         public string Description { get; set; }
         public string Additional1 { get; set; }
         public string Additional2 { get; set; }
+        public bool ExistsInDatabase { get; set; } = false;
 
         private ImportState _state = ImportState.Waiting;
         public ImportState State

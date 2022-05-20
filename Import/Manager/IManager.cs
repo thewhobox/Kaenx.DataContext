@@ -42,7 +42,7 @@ namespace Kaenx.DataContext.Import.Manager
         /// Returns device list exportet from the file
         /// </summary>
         /// <returns>List of devices</returns>
-        public abstract List<ImportDevice> GetDeviceList();
+        public abstract List<ImportDevice> GetDeviceList(CatalogContext context = null);
 
 
         public void StartImport(ImportDevice device, CatalogContext context)

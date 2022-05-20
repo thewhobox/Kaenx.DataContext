@@ -99,7 +99,7 @@ namespace Kaenx.DataContext.Import.Manager
             return langs;
         }
 
-        public override List<ImportDevice> GetDeviceList()
+        public override List<ImportDevice> GetDeviceList(CatalogContext _context = null)
         {
             if (Archive == null)
                 Archive = ZipFile.OpenRead(_path);
@@ -148,6 +148,26 @@ namespace Kaenx.DataContext.Import.Manager
                         Additional2 = item.Attribute("Hardware2ProgramRefId").Value,
                         ApplicationName = ""
                     };
+
+                    if(_context != null)
+                    {
+                        //"M-00FA_H-00fa00002307-1_HP-0207-23-E298_CI-D7.2Dv23-1"
+                        string[] items = device.Id.Split('-');
+                        //TODO also search with manuId
+                        Hardware2AppModel hard = _context.Hardware2App.SingleOrDefault(h => h.Number == items[2]);
+
+                        if(hard != null)
+                        {
+                            int appNumber;
+                            int appVersion;
+                            if(int.TryParse(items[4], System.Globalization.NumberStyles.HexNumber, null, out appNumber) 
+                            && int.TryParse(items[5], System.Globalization.NumberStyles.HexNumber, null, out appVersion))
+                            {
+                                device.ExistsInDatabase = _context.Applications.Any(a => a.HardwareId == hard.Id && a.Number == appNumber && a.Version == appVersion);
+                            }
+                        }
+                    }
+
 
                     XElement prod = hardXML.Descendants().Single(d => d.Attribute("Id")?.Value == device.Additional1);
                     if(images.ContainsKey(device.Additional1))

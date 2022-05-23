@@ -26,7 +26,7 @@ namespace Kaenx.DataContext.Import.Dynamic
         public bool IsVisible
         {
             get { return _isVisible; }
-            set { _isVisible = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Visible")); }
+            set { _isVisible = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("IsVisible")); }
         }
 
         public bool HasAccess { get; set; }

@@ -14,12 +14,11 @@ namespace Kaenx.DataContext.Import.Manager
 {
     public class Konnekting : IManager
     {
-
         private XElement kDevice { get; set; }
         private CatalogContext _context { get; set; }
 
 
-        public Konnekting(string path) : base(path) 
+        public Konnekting(string path) : base(path, 6) 
         {
             kDevice = XDocument.Load(path).Root;
         }
@@ -79,8 +78,8 @@ namespace Kaenx.DataContext.Import.Manager
 
                 if (ids.Any(id => id.Id == xdevice.Attribute("DeviceId").Value))
                 {
-                    OnDeviceNameChanged(xdevice.Element(GetXName("DeviceName")).Value);
-                    OnStateChanged("Allgemeine Infos");
+                    CurrentDevice = xdevice.Element(GetXName("DeviceName")).Value;
+                    CurrentState = "Allgemeine Infos";
 
                     string hardNumber = xdevice.Attribute("DeviceId").Value;
                     int hardVersion = int.Parse(xdevice.Attribute("Revision").Value);
@@ -172,7 +171,7 @@ namespace Kaenx.DataContext.Import.Manager
                     Channels.Add(channel);
 
 
-                    OnStateChanged("Parameter");
+                    CurrentState = "Parameter";
 
                     foreach(XElement group in xdevice.Element(GetXName("Parameters")).Elements(GetXName("ParameterGroup")))
                     {
@@ -297,7 +296,7 @@ namespace Kaenx.DataContext.Import.Manager
                     CalcDefaultVisibility(channel, Id2Values);
                     adds.ParamsHelper = FunctionHelper.ObjectToByteArray(Channels, true, "Kaenx.DataContext.Import.Dynamic");
                     
-                    OnStateChanged("Kommunikationsobjekte");
+                    CurrentState = "Kommunikationsobjekte";
                     List<int> comsDefault = new List<int>();
                     foreach(XElement xcom in xdevice.Element(GetXName("CommObjects")).Elements()) {
                         AppComObject com = null;
@@ -351,8 +350,6 @@ namespace Kaenx.DataContext.Import.Manager
 
             context.SaveChanges();
 
-            OnDeviceNameChanged("Fertig");
-            OnStateChanged("Abgeschlossen");
         }
 
 

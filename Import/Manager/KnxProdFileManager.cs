@@ -33,7 +33,7 @@ namespace Kaenx.DataContext.Import.Manager
         private int counterComObjects = 0;
 
 
-        public KnxProdFileManager(string path) : base(path) { }
+        public KnxProdFileManager(string path) : base(path, 8) { }
 
         public override bool CheckManager()
         {
@@ -201,15 +201,19 @@ namespace Kaenx.DataContext.Import.Manager
 
         public override void StartImport(List<ImportDevice> devices, CatalogContext context)
         {
+            ProgressCalculate(devices.Count);
+
             if (Archive == null)
                 Archive = ZipFile.OpenRead(_path);
 
             _context = context;
             UpdateKnxMaster();
 
+            System.Threading.Tasks.Task.Delay(2000);
+
             foreach(ImportDevice importDevice in devices) {
-                OnDeviceNameChanged(importDevice.Name);
-                OnStateChanged("Importiere Gerät");
+                CurrentDevice = importDevice.Name;
+                CurrentState = "Importiere Gerät";
 
 
                 
@@ -251,10 +255,19 @@ namespace Kaenx.DataContext.Import.Manager
 
             Archive.Dispose();
             Archive = null;
+
+            CurrentDevice = "Fertig";
+            CurrentState = "Import abgeschlossen";
         }
 
         private void UpdateKnxMaster() {
             ZipArchiveEntry entry = Archive.GetEntry("knx_master.xml");
+            if(entry == null)
+            {
+                Debug.WriteLine("Produktdatenbank enthält keine knx_master.xml");
+                return;
+            }
+            
             XElement manXML = XDocument.Load(entry.Open()).Root;
 
             currentNamespace = manXML.Attribute("xmlns").Value;
@@ -286,10 +299,10 @@ namespace Kaenx.DataContext.Import.Manager
             string manu = appId.Substring(0, 6);
             ZipArchiveEntry entry = Archive.GetEntry($"{manu}/{appId}.xml");
             XElement xapp = XDocument.Load(entry.Open()).Root;
-            OnStateChanged(appName + " - Übersetzen");
+            CurrentState = appName + " - Übersetzen";
             TranslateXml(xapp, _language);
             xapp = xapp.Descendants(GetXName("ApplicationProgram")).ElementAt(0);
-            OnStateChanged(appName + " - Infos");
+            CurrentState = appName + " - Infos";
             int appNum = GetAttributeAsInt(xapp, "ApplicationNumber");
             int appVer = GetAttributeAsInt(xapp, "ApplicationVersion");
 
@@ -382,7 +395,7 @@ namespace Kaenx.DataContext.Import.Manager
         }
 
         private void ImportDynamic(XElement xdyn, int appId) {
-            OnStateChanged(appName + " - Dynamische Ansicht");
+            CurrentState = appName + " - Dynamische Ansicht";
 
             Dictionary<string, IDynChannel> Id2Channel = new Dictionary<string, IDynChannel>();
             Dictionary<string, ParameterBlock> Id2ParamBlock = new Dictionary<string, ParameterBlock>();
@@ -497,7 +510,7 @@ namespace Kaenx.DataContext.Import.Manager
                 pb.Conditions = GetConditions(xele);
                 Id2ParamBlock.Add(GetAttributeAsString(xele, "Id"), pb);
 
-                string groupText = null;
+                string groupText = null; //TODO check what i wanted to do with this
                 XElement xparent = xele.Parent;
                 while(true) {
                     string name = xparent.Name.LocalName;
@@ -642,7 +655,7 @@ namespace Kaenx.DataContext.Import.Manager
         }
 
         public string CheckForBindings(string text, BindingTypes type, int targetId, XElement xele, Dictionary<string, string> args, Dictionary<string, int> idMapper) {
-            Regex reg = new Regex("{{(.*)}}");
+            Regex reg = new Regex("{{([A-Za-z0-9: ]*)}}");
             if(reg.IsMatch(text)){
                 Match match = reg.Match(text);
                 string g2 = match.Groups[1].Value;
@@ -658,6 +671,7 @@ namespace Kaenx.DataContext.Import.Manager
                     FullText = text.Replace(match.Groups[0].Value, "{d}")
                 };
                 //Text beinhaltet ein Binding zu einem Parameter
+                try{
                 if(g2.Contains(':')){
                     string[] opts = g2.Split(':');
                     text = text.Replace(match.Groups[0].Value, opts[1]);
@@ -667,6 +681,9 @@ namespace Kaenx.DataContext.Import.Manager
                     text = text.Replace(match.Groups[0].Value, "");
                     bind.SourceId = g2 == "0" ? -1 : int.Parse(g2);
                     bind.DefaultText = "";
+                }
+                }catch{
+
                 }
                 
                 if(bind.SourceId == -1) {
@@ -825,18 +842,27 @@ namespace Kaenx.DataContext.Import.Manager
 
             foreach(XElement xref in xobjs){
                 int id = 0;
-                
-                if(xref.Attribute("RefId") != null)
+
+                switch(xref.Name.LocalName)
                 {
-                    id = GetItemId(xref.Attribute("RefId").Value);
-                    int newId = idMapper["p"+id];
-                    xref.Attribute("RefId").Value = "xx_R-" + newId;
-                }
-                else
-                {
-                    id = GetItemId(xref.Attribute("ParamRefId").Value);
-                    int newId = idMapper["p"+id];
-                    xref.Attribute("ParamRefId").Value = "xx_R-" + newId;
+                    case "ParameterRefRef":
+                    {
+                        id = GetItemId(xref.Attribute("RefId").Value);
+                        int newId = idMapper["p"+id];
+                        xref.Attribute("RefId").Value = "xx_R-" + newId;
+                        break;
+                    }
+
+                    case "choose":
+                    {
+                        id = GetItemId(xref.Attribute("ParamRefId").Value);
+                        int newId = idMapper["p"+id];
+                        xref.Attribute("ParamRefId").Value = "xx_R-" + newId;
+                        break;
+                    }
+
+                    default:
+                        throw new Exception("Not implemented");
                 }
             }
 
@@ -851,7 +877,7 @@ namespace Kaenx.DataContext.Import.Manager
             xobjs.AddRange(xdyn.Descendants(GetXName("Channel")));
             xobjs.AddRange(xdyn.Descendants(GetXName("ParameterBlock")));
             
-            Regex reg = new Regex("{{(.*)}}");
+            Regex reg = new Regex("{{([A-Za-z0-9:]*)}}");
 
             foreach(XElement xobj in xobjs){
                 string temp = xobj.Attribute("Text").Value;
@@ -865,7 +891,13 @@ namespace Kaenx.DataContext.Import.Manager
 
                 if(xobj.Attribute("Number") != null) {
                     string numb = xobj.Attribute("Number").Value;
-                    xobj.Attribute("Id").Value = xobj.Attribute("Id").Value.Replace(numb, args[numb]);
+                    if(args.ContainsKey(numb))
+                    {
+                        xobj.Attribute("Number").Value = args[numb];
+                        string id = xobj.Attribute("Id").Value;
+                        id = id.Replace(numb, args[numb]);
+                        xobj.Attribute("Id").Value = id;
+                    }
                 }
 
                 if(xobj.Attribute("ParamRefId") != null) {
@@ -877,7 +909,7 @@ namespace Kaenx.DataContext.Import.Manager
         }
 
         private Dictionary<string, int> ImportAppStatic(XElement xstatic, int appId, Dictionary<string, string> args = null) {
-            if(args == null) OnStateChanged(appName + " - Parameter");
+            if(args == null) CurrentState = appName + " - Parameter";
             Dictionary<string, int> idMapper = new Dictionary<string, int>(); //Mapping old Ids to new one if a ModuleDef is beeing used
 
 
@@ -906,7 +938,7 @@ namespace Kaenx.DataContext.Import.Manager
 
 
 
-            if(args == null) OnStateChanged(appName + " - Kommunikationsobjekte");
+            if(args == null) CurrentState = appName + " - Kommunikationsobjekte";
             if(xstatic.Element(GetXName("ComObjectRefs")) != null) {
                 ParseComObjects(xstatic, appId, args, args != null ? idMapper : null);
             }
@@ -917,7 +949,7 @@ namespace Kaenx.DataContext.Import.Manager
         }
 
         private void ImportAppSegments(XElement xapp, int appId) {
-            OnStateChanged(appName + " - Segments");
+            CurrentState = appName + " - Segments";
             IEnumerable<XElement> xsegments = xapp.Element(GetXName("Static")).Element(GetXName("Code")).Elements();
 
             foreach (XElement seg in xsegments)
@@ -964,7 +996,7 @@ namespace Kaenx.DataContext.Import.Manager
         }
 
         private void ImportAppParaTypes(XElement xapp, int appId) {
-            OnStateChanged(appName + " - ParamTypes");
+            CurrentState = appName + " - ParamTypes";
             parameterTypeIds = new Dictionary<string, int>();
             IEnumerable<XElement> xparaTypes = xapp.Descendants(GetXName("ParameterType"));
 
@@ -1173,8 +1205,9 @@ namespace Kaenx.DataContext.Import.Manager
                 xml = XDocument.Load(entry.Open()).Root;
                 TranslateXml(xml, _language);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
+                Debug.WriteLine("Hardware Fehler!" + ex.Message);
                 //Log.Error(e, "Hardware Fehler!");
                 //OnError?.Invoke(device.Name + ": " + e.Message + Environment.NewLine + e.StackTrace);
                 return appIds;
@@ -1539,6 +1572,10 @@ namespace Kaenx.DataContext.Import.Manager
                             pti.SuffixText = "Stunden";
                             pti.Divider = 1;
                             break;
+                        case "Minutes":
+                            pti.SuffixText = "Minuten";
+                            pti.Divider = 1;
+                            break;
                         case "Seconds":
                             pti.SuffixText = "Sekunden";
                             pti.Divider = 1;
@@ -1589,6 +1626,10 @@ namespace Kaenx.DataContext.Import.Manager
                             throw new Exception("TypeTime Unit nicht unterstützt!! " + tags[1]);
                     }
                     block.Parameters.Add(pti);
+                    break;
+                
+                case ParamTypes.Picture:
+                    Debug.WriteLine("Es werden Bilder verwendet. Bilder wurden aber noch nicht implementiert.");
                     break;
 
                 default:
@@ -1740,7 +1781,8 @@ namespace Kaenx.DataContext.Import.Manager
                     param.SegmentId = (GetAttributeAsInt(xmem, "ObjectIndex") << 16) + GetAttributeAsInt(xmem, "PropertyId");
                     param.SegmentType = SegmentTypes.Property;
                     //TODO check offset??
-                    throw new Exception("Änderung nicht implementiert! Importhelper->1295 - Parameter in Property");
+                    //<Property ObjectIndex="0" PropertyId="78" Offset="0" BitOffset="0" />
+                    //throw new Exception("Änderung nicht implementiert! Importhelper->1295 - Parameter in Property");
                 } else {
                     throw new Exception("Unbekannter Speicherort: " + xmem.Name.LocalName);
                 }
@@ -1759,7 +1801,7 @@ namespace Kaenx.DataContext.Import.Manager
 
                 if (idMapper != null) {
                     pId = counterParameter++;
-                    idMapper.Add("p" + GetItemId(GetAttributeAsString(xref, "RefId")), pId);
+                    idMapper.Add("p" + GetItemId(GetAttributeAsString(xref, "Id")), pId);
                 }
 
                 final.ParameterId = pId;

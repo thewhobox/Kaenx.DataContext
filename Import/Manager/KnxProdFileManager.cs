@@ -201,6 +201,7 @@ namespace Kaenx.DataContext.Import.Manager
 
         public override void StartImport(List<ImportDevice> devices, CatalogContext context)
         {
+            if (devices.Count == 0) return;
             ProgressCalculate(devices.Count);
 
             if (Archive == null)
@@ -1335,43 +1336,34 @@ namespace Kaenx.DataContext.Import.Manager
 
             List<ParamCondition> Conds = GetConditions(xele, true);
 
-            if(vers < 14)
-            {
-                ParamSeperator sepe = new ParamSeperator
-                {
-                    Id = GetItemId(xele.Attribute("Id").Value),
-                    Text = xele.Attribute("Text").Value,
-                    Conditions = Conds
-                };
-                if (string.IsNullOrEmpty(sepe.Text))
-                    sepe.Hint = "HorizontalRuler";
-                block.Parameters.Add(sepe);
-                return;
-            }
-
             string hint = xele.Attribute("UIHint")?.Value;
 
             IDynParameter sep;
             switch (hint)
             {
                 case null:
-                case "HeadLine":
+                case "Headline":
+                    sep = new ParamSeperator();
+                    if (hint == "Headline")
+                        (sep as ParamSeperator).Hint = ParamSeparatorHint.Headline;
+                    else
+                        (sep as ParamSeperator).Hint = ParamSeparatorHint.None;
+                    break;
+
                 case "HorizontalRuler":
-                    sep = new ParamSeperator() { Hint = hint };
+                    sep = new ParamSeperator() { Hint = ParamSeparatorHint.HorizontalRuler };
                     break;
 
                 case "Error":
+                    sep = new ParamSeperatorBox() { Hint = ParamSeparatorHint.Error };
+                    break;
+
                 case "Information":
-                    sep = new ParamSeperatorBox()
-                    {
-                        Hint = hint,
-                        IsError = (hint == "Error")
-                    };
+                    sep = new ParamSeperatorBox() { Hint = ParamSeparatorHint.Information };
                     break;
 
                 default:
-                    //Log.Error("Unbekannter UIHint: " + hint);
-                    return;
+                    throw new NotImplementedException("Unbekannter UIHint: " + hint);
             }
 
             sep.Conditions = Conds;

@@ -14,7 +14,7 @@ namespace Kaenx.DataContext.Import.Dynamic
         public string Text { get; set; }
         public string SuffixText { get; set; }
         public string Default { get; set; }
-        public string Hint { get; set; }
+        public ParamSeparatorHint Hint { get; set; }
 
         public string Value { get; set; }
 
@@ -27,12 +27,21 @@ namespace Kaenx.DataContext.Import.Dynamic
 
         [JsonIgnore]
         [JsonProperty("l")]
-        public bool IsLineVisible { get { return Hint == "HorizontalRuler"; } }
+        public bool IsLineVisible { get { return string.IsNullOrEmpty(Text); } }
 
         public bool HasAccess { get; set; } = true;
         public List<ParamCondition> Conditions { get; set; }
         public bool IsEnabled { get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
+    }
+
+    public enum ParamSeparatorHint
+    {
+        None,
+        HorizontalRuler,
+        Headline,
+        Information,
+        Error
     }
 }

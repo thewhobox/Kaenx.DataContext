@@ -13,7 +13,7 @@ namespace Kaenx.DataContext.Import.Dynamic
         public string Text { get; set; }
         public string SuffixText { get; set; }
         public string Default { get; set; }
-        public string Hint { get; set; }
+        public ParamSeparatorHint Hint { get; set; }
 
         public string Value { get; set; }
 

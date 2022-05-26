@@ -1,5 +1,6 @@
 ﻿using Kaenx.DataContext.Catalog;
 using Kaenx.DataContext.Import.Dynamic;
+using Kaenx.DataContext.Import.Values;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -165,7 +166,7 @@ namespace Kaenx.DataContext.Import.Manager
                     model.ManufacturerId = manuId;
                     context.Devices.Add(model);
 
-                    Dictionary<int, string> Id2Values = new Dictionary<int, string>();
+                    Dictionary<int, IValues> Id2Values = new Dictionary<int, IValues>();
                     List<IDynChannel> Channels = new List<IDynChannel>();
                     ChannelIndependentBlock channel = new ChannelIndependentBlock() {  IsVisible = true, HasAccess = true };
                     Channels.Add(channel);
@@ -199,7 +200,7 @@ namespace Kaenx.DataContext.Import.Manager
                             XElement xvalue = xpara.Element(GetXName("Value"));
                             para.Value = HexToString(xvalue.Attribute("Default").Value);
 
-                            Id2Values.Add(para.ParameterId, para.Value);
+                            Id2Values.Add(para.ParameterId, new StandardValues(para.Value));
 
                             List<ParamCondition> _conditions = GenerateConditionsParameter(para.ParameterId, xdevice);
                             AppParameterTypeViewModel paraType = GenerateParameterType(app.Id, para.ParameterId, xvalue);
@@ -522,7 +523,7 @@ namespace Kaenx.DataContext.Import.Manager
             return paraType;
         }
 
-        private void CalcDefaultVisibility(ChannelIndependentBlock channel, Dictionary<int, string> values){
+        private void CalcDefaultVisibility(ChannelIndependentBlock channel, Dictionary<int, IValues> values){
             foreach(ParameterBlock block in channel.Blocks) {
                 block.IsVisible = FunctionHelper.CheckConditions(block.Conditions, values);
 

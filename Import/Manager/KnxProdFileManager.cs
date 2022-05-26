@@ -1,4 +1,5 @@
 ﻿using Kaenx.DataContext.Import.Dynamic;
+using Kaenx.DataContext.Import.Values;
 using Kaenx.DataContext.Catalog;
 using System;
 using System.Collections.Generic;
@@ -546,7 +547,7 @@ namespace Kaenx.DataContext.Import.Manager
                 GetChildItems(pb, xele, textRefId, groupText);
             }
 
-            Dictionary<int, string> Id2Value = new Dictionary<int, string>();
+            Dictionary<int, IValues> Id2Value = new Dictionary<int, IValues>();
             foreach(IDynChannel channel in Channels) {
                 foreach(ParameterBlock block in channel.Blocks)
                     GenerateParamList(block, Id2Value);
@@ -555,10 +556,10 @@ namespace Kaenx.DataContext.Import.Manager
             
 
 
-            Dictionary<int, string> values = new Dictionary<int, string>();
+            Dictionary<int, IValues> values = new Dictionary<int, IValues>();
             foreach(AppParameter para in AppParas.Values)
             {
-                values[para.ParameterId] = para.Value;
+                values[para.ParameterId] = new StandardValues(para.Value);
             }
             //TODO Assignments beachten
 
@@ -617,20 +618,20 @@ namespace Kaenx.DataContext.Import.Manager
             _context.SaveChanges();
         }
 
-        public void GenerateParamList(ParameterBlock block, Dictionary<int, string> Id2Value) {
+        public void GenerateParamList(ParameterBlock block, Dictionary<int, IValues> Id2Value) {
             foreach (IDynParameter para in block.Parameters)
             {
                 //if (Id2Value.ContainsKey(para.Id))
                 //    throw new Exception("Es befinden sich mehrere ParameterRefs in Dynamic! " + para.Id);
 
-                Id2Value[para.Id] = para.Value;
+                Id2Value[para.Id] = new StandardValues(para.Value);
             }
 
             foreach(ParameterBlock pb in block.Blocks)
                 GenerateParamList(pb, Id2Value);
         }
 
-        public void CheckBlockVisibility(ParameterBlock block, Dictionary<int, string> Id2Value) {
+        public void CheckBlockVisibility(ParameterBlock block, Dictionary<int, IValues> Id2Value) {
             foreach (IDynParameter para in block.Parameters)
             {
                 if(block.HasAccess)
@@ -1833,6 +1834,8 @@ namespace Kaenx.DataContext.Import.Manager
 
         public List<ParamCondition> GetConditions(XElement xele, bool isParam)
         {
+            //TODO also check if choose refers to param with additional chooses
+            //so if it is visible
             List<ParamCondition> conds = new List<ParamCondition>();
             try
             {

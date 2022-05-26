@@ -7,6 +7,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 using Kaenx.DataContext.Import.Dynamic;
+using Kaenx.DataContext.Import.Values;
 
 namespace Kaenx.DataContext.Import {
 
@@ -99,14 +100,15 @@ namespace Kaenx.DataContext.Import {
             }
         }
 
-        public static bool CheckConditions(List<ParamCondition> conds, Dictionary<int, string> values)
+        public static bool CheckConditions(List<ParamCondition> conds, Dictionary<int, IValues> values)
         {
             bool flag = true;
 
             foreach (ParamCondition cond in conds)
             {
                 if (flag == false) break;
-                string paraValue = values[cond.SourceId];
+                string paraValue = values[cond.SourceId].Value;
+                if(paraValue == "x") return false;
 
                 switch (cond.Operation)
                 {

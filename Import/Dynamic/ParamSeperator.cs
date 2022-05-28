@@ -27,7 +27,7 @@ namespace Kaenx.DataContext.Import.Dynamic
 
         [JsonIgnore]
         [JsonProperty("l")]
-        public bool IsLineVisible { get { return string.IsNullOrEmpty(Text); } }
+        public bool IsLineVisible { get { return string.IsNullOrEmpty(Text) || string.IsNullOrWhiteSpace(Text); } }
 
         public bool HasAccess { get; set; } = true;
         public List<ParamCondition> Conditions { get; set; }

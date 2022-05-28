@@ -32,16 +32,29 @@ namespace Kaenx.DataContext.Import.Dynamic
         [JsonProperty("e")]
         public bool IsEnabled { get; set; }
 
-        private bool _isVisible;
+
         [JsonProperty("vi")]
+        private bool _isVisible;
         public bool IsVisible
         {
             get { return _isVisible; }
-            set { 
-                _isVisible = value; 
-                Changed("IsVisible"); 
+            set
+            {
+                if (_isVisible != value)
+                    Changed("ParamVisibility");
+                _isVisible = value;
+                Changed("IsVisible");
             }
         }
+
+        [JsonProperty("vc")]
+        private bool _isVisibleCondition;
+        public bool IsVisibleCondition
+        {
+            get { return _isVisibleCondition; }
+            set { _isVisibleCondition = value; Changed("IsVisibleCondition"); }
+        }
+
 
         public List<TableColumn> Columns {get;set;} = new List<TableColumn>();
         public List<TableRow> Rows {get;set;} = new List<TableRow>();

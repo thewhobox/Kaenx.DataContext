@@ -25,7 +25,24 @@ namespace Kaenx.DataContext.Import.Dynamic
         public bool IsVisible
         {
             get { return _isVisible; }
-            set { _isVisible = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("IsVisible")); }
+            set
+            {
+                if (_isVisible != value)
+                    Changed("ParamVisibility");
+                _isVisible = value;
+                Changed("IsVisible");
+            }
+        }
+
+        private bool _isVisibleCondition;
+        public bool IsVisibleCondition
+        {
+            get { return _isVisibleCondition; }
+            set { _isVisibleCondition = value; Changed("IsVisibleCondition"); }
+        }
+        public void Changed(string name)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
         public bool SuffixIsVisible { get { return !string.IsNullOrEmpty(SuffixText); } }

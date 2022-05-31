@@ -626,7 +626,7 @@ namespace Kaenx.DataContext.Import.Manager
         }
 
         public string CheckForBindings(string text, BindingTypes type, int targetId, XElement xele, Dictionary<string, string> args, Dictionary<string, int> idMapper) {
-            Regex reg = new Regex("{{([A-Za-z0-9: ]*)}}");
+            Regex reg = new Regex("{{(.*)}}"); //[A-Za-z0-9: -]
             if(reg.IsMatch(text)){
                 Match match = reg.Match(text);
                 string g2 = match.Groups[1].Value;
@@ -741,7 +741,6 @@ namespace Kaenx.DataContext.Import.Manager
                 }
             }
         }
-
 
         private void ImportModuleDefs(XElement xapp, int appId) {
             Dictionary<string, KnxProdAllocators> allocs = new Dictionary<string, KnxProdAllocators>();
@@ -1668,6 +1667,14 @@ namespace Kaenx.DataContext.Import.Manager
                     int oldId = com.Id;
                     com.Id = counterComObjects++;
                     idMapper.Add("c" + oldId, com.Id);
+
+                    //TODO also rename TextParameterRefID in parameterblock
+                    if(xref.Attribute("TextParameterRefId") != null)
+                    {
+                        int id = GetItemId(xref.Attribute("TextParameterRefId").Value);
+                        int newId = idMapper["p" + id];
+                        xref.Attribute("TextParameterRefId").Value = "...R-" + newId;
+                    }
                 }
 
 

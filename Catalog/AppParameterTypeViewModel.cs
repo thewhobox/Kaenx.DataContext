@@ -35,6 +35,7 @@ namespace Kaenx.DataContext.Catalog
         Color,
         CheckBox,
         Time,
-        NumberHex
+        NumberHex,
+        Slider
     }
 }

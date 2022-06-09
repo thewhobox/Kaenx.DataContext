@@ -807,6 +807,7 @@ namespace Kaenx.DataContext.Import.Manager
 
         public void RenameDynamic(XElement xdyn, Dictionary<string, string> args, Dictionary<string, int> idMapper) {
             List<XElement> xobjs = new List<XElement>();
+            xobjs.AddRange(xdyn.Descendants(GetXName("ParameterBlock")));
             xobjs.AddRange(xdyn.Descendants(GetXName("ParameterRefRef")));
             xobjs.AddRange(xdyn.Descendants(GetXName("choose")));
 
@@ -815,6 +816,17 @@ namespace Kaenx.DataContext.Import.Manager
 
                 switch(xref.Name.LocalName)
                 {
+                    case "ParameterBlock":
+                    {
+                        if(xref.Attribute("TextParameterRefId") != null)
+                        {
+                            id = GetItemId(xref.Attribute("TextParameterRefId").Value);
+                            int newId = idMapper["p"+id];
+                            xref.Attribute("TextParameterRefId").Value = "xx_R-" + newId;
+                        }
+                        break;
+                    }
+
                     case "ParameterRefRef":
                     {
                         id = GetItemId(xref.Attribute("RefId").Value);
@@ -985,6 +997,9 @@ namespace Kaenx.DataContext.Import.Manager
                         if (child.Attribute("UIHint")?.Value == "CheckBox")
                         {
                             model.Type = ParamTypes.CheckBox;
+                        } else if(child.Attribute("UIHint")?.Value == "Slider")
+                        {
+                            model.Type = ParamTypes.Slider;
                         } else 
                         { 
                             switch (child.Attribute("Type").Value)
@@ -1388,6 +1403,29 @@ namespace Kaenx.DataContext.Import.Manager
                     block.Parameters.Add(pip);
                     break;
 
+                case ParamTypes.Slider:
+                    Dynamic.ParamSlider ps = new ParamSlider
+                    {
+                        Id = para.ParameterId,
+                        Text = para.Text,
+                        SuffixText = para.SuffixText,
+                        Value = para.Value,
+                        Default = para.Value,
+                        Conditions = paramList,
+                        HasAccess = hasAccess,
+                        IsEnabled = IsCtlEnabled,
+                        IsVisibleCondition = isVisibleCond
+                    };
+                    try{
+                        ps.Minimum = double.Parse(paraType.Tag1);
+                        ps.Maximum = double.Parse(paraType.Tag2);
+                    } catch{
+                        Debug.WriteLine("Can't convert Min/Max to Double: " + paraType.Tag1 + "/" + paraType.Tag2);
+                    }
+                    //TODO add min/max/inc
+                    block.Parameters.Add(ps);
+                    break;
+
                 case ParamTypes.NumberInt:
                 case ParamTypes.NumberUInt:
                 case ParamTypes.Float9:
@@ -1405,12 +1443,13 @@ namespace Kaenx.DataContext.Import.Manager
                     };
                     try
                     {
+                        //TODO convert to double if float
                         pnu.Minimum = StringToInt(paraType.Tag1);
                         pnu.Maximum = StringToInt(paraType.Tag2);
                     }
                     catch
                     {
-                        Debug.WriteLine("Cant convert Min/Max to Int: " + paraType.Tag1 + "/" + paraType.Tag2);
+                        Debug.WriteLine("Can't convert Min/Max to Int: " + paraType.Tag1 + "/" + paraType.Tag2);
                     }
                     block.Parameters.Add(pnu);
                     break;

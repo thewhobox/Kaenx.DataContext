@@ -14,6 +14,7 @@ namespace Kaenx.DataContext.Import.Values
     public class ParameterValues : IValues
     {
         public List<IDynParameter> Parameters = new List<IDynParameter>();
+        public AssignParameter Assignment; //TODO get set; handler for parachanged
         public string Value 
         {
            get {

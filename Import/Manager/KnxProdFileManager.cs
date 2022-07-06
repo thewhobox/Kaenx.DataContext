@@ -1042,7 +1042,7 @@ namespace Kaenx.DataContext.Import.Manager
                         {
                             AppParameterTypeEnumViewModel enu = new AppParameterTypeEnumViewModel
                             {
-                                TypeId = model.Id,
+                                TypeId = model.Id, //TODO this is not anymore. just count up, Tag1 ist number which also counts up
                                 ParameterId = GetItemId(en.Attribute("Id").Value)
                             };
                             
@@ -1103,7 +1103,7 @@ namespace Kaenx.DataContext.Import.Manager
 
 
             foreach(AppParameterTypeViewModel model in _context.AppParameterTypes.Where(pt => pt.ApplicationId == appId)) {
-                parameterTypeIds.Add(model.Name, model.Id);
+                parameterTypeIds.Add(model.Name, model.Id); //just count up here, dont save again
             }
         }
 

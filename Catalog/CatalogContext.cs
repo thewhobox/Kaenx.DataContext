@@ -15,6 +15,7 @@ namespace Kaenx.DataContext.Catalog
         public DbSet<DeviceViewModel> Devices { get; set; }
         public DbSet<ApplicationViewModel> Applications { get; set; }
         public DbSet<CatalogViewModel> Sections { get; set; }
+        public DbSet<Baggage> Baggages { get; set; }
 
         public DbSet<AppComObject> AppComObjects { get; set; }
         public DbSet<AppParameter> AppParameters { get; set; }
@@ -68,7 +69,8 @@ namespace Kaenx.DataContext.Catalog
                     break;
 
                 case LocalConnectionCatalog.DbConnectionType.MySQL:
-                    optionsBuilder.UseMySql($"Server={_conn.DbHostname};Database={_conn.DbName};Uid={_conn.DbUsername};Pwd={_conn.DbPassword};");
+                    string conn = $"Server={_conn.DbHostname};Database={_conn.DbName};Uid={_conn.DbUsername};Pwd={_conn.DbPassword};";
+                    optionsBuilder.UseMySql(conn, ServerVersion.AutoDetect(conn));
                     break;
 
                 case LocalConnectionCatalog.DbConnectionType.Memory:

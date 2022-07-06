@@ -11,6 +11,8 @@ using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 using System.Diagnostics;
+using Windows.UI.Xaml.Media.Imaging;
+using Windows.Graphics.Imaging;
 
 namespace Kaenx.DataContext.Import.Manager
 {
@@ -369,6 +371,8 @@ namespace Kaenx.DataContext.Import.Manager
             _context.Applications.Add(app);
             _context.SaveChanges();
 
+            ImportBaggages(manu, xapp);
+
             ImportAppSegments(xapp, app.Id);
             ImportAppParaTypes(xapp, app.Id);
 
@@ -394,6 +398,71 @@ namespace Kaenx.DataContext.Import.Manager
             }
 
             ImportDynamic(xapp.Element(GetXName("Dynamic")), app.Id);
+        }
+
+        private void ImportBaggages(string manu, XElement xapp)
+        {
+            XElement xextension = xapp.Element(GetXName("Static"))?.Element(GetXName("Extension"));
+            if (xextension == null) return;
+
+            List<string> baggs = new List<string>();
+
+            foreach(XElement xbag in xextension.Descendants(GetXName("Baggage")))
+            {
+                baggs.Add(xbag.Attribute("RefId").Value);
+            }
+
+            ZipArchiveEntry entry = Archive.GetEntry($"{manu}/Baggages.xml");
+            XElement xdoc = XElement.Load(entry.Open());
+
+            foreach (XElement xbag in xdoc.Descendants(GetXName("Baggage")))
+            {
+                if (!baggs.Contains(xbag.Attribute("Id").Value)) continue;
+
+                Baggage bag = new Baggage();
+                bag.Id = xbag.Attribute("Id").Value;
+
+                bag.TimeStamp = DateTime.Parse(xbag.Element(GetXName("FileInfo")).Attribute("TimeInfo").Value);
+                string ext = bag.Id.ToLower().Substring(bag.Id.LastIndexOf('.') + 3);
+                switch (ext)
+                {
+                    case "png":
+                        bag.PictureType = PictureTypes.PNG;
+                        break;
+
+                    case "jpg":
+                    case "jpeg":
+                        bag.PictureType = PictureTypes.JPG;
+                        break;
+
+                    default:
+                        throw new NotSupportedException("Dateiendung " + ext + " wird nicht unterstützt");
+                }
+
+                string path = xbag.Attribute("TargetPath").Value;
+                string name = xbag.Attribute("Name").Value;
+                string temp = Path.Combine(Path.GetTempPath(), "Kaenx-Importer");
+                Directory.CreateDirectory(temp);
+
+                if (!string.IsNullOrEmpty(path)) path = path + "/";
+
+                ZipArchiveEntry file = Archive.GetEntry($"{manu}/Baggages/{path}{name}");
+                file.ExtractToFile(Path.Combine(temp, name), true);
+
+                byte[] data = File.ReadAllBytes(Path.Combine(temp, name));
+
+                if(_context.Baggages.Any(b => b.Id == bag.Id))
+                {
+                    Baggage bago = _context.Baggages.Single(b => b.Id == bag.Id);
+                    if (bag.TimeStamp < bago.TimeStamp) continue; //Skip older files
+                    bago.Data = data;
+                    _context.Baggages.Update(bago);
+                } else
+                {
+                    bag.Data = data;
+                    _context.Baggages.Add(bag);
+                }
+            }
         }
 
         private void ImportDynamic(XElement xdyn, int appId) {
@@ -1624,7 +1693,23 @@ namespace Kaenx.DataContext.Import.Manager
                     }
                     block.Parameters.Add(pti);
                     break;
-                
+
+                case ParamTypes.Picture:
+                    ParamPicture ppic = new ParamPicture()
+                    {
+                        Id = para.ParameterId,
+                        Text = para.Text,
+                        Default = para.Value,
+                        Value = para.Value,
+                        Conditions = paramList,
+                        HasAccess = hasAccess,
+                        IsEnabled = IsCtlEnabled,
+                    };
+                    block.Parameters.Add(ppic);
+                    break;
+
+
+
                 /*case ParamTypes.Picture:
                     Debug.WriteLine("Es werden Bilder verwendet. Bilder wurden aber noch nicht implementiert.");
                     break;*/
@@ -2019,36 +2104,114 @@ namespace Kaenx.DataContext.Import.Manager
 
         public string EscapeString(string input)
         {
-            input = input.Replace("%", "%25");
-            input = input.Replace(".", "%2E");
-            input = input.Replace(" ", "%20");
-            input = input.Replace("!", "%21");
-            input = input.Replace("\"", "%22");
-            input = input.Replace("#", "%23");
-            input = input.Replace("$", "%24");
-            input = input.Replace("&", "%26");
-            input = input.Replace("(", "%28");
-            input = input.Replace(")", "%29");
-            input = input.Replace("+", "%2B");
-            input = input.Replace("-", "%2D");
-            input = input.Replace("/", "%2F");
-            input = input.Replace(":", "%3A");
-            input = input.Replace(";", "%3B");
-            input = input.Replace("<", "%3C");
-            input = input.Replace("=", "%3D");
-            input = input.Replace(">", "%3E");
-            input = input.Replace("?", "%3F");
-            input = input.Replace("@", "%40");
-            input = input.Replace("[", "%5B");
-            input = input.Replace("\\", "%5C");
-            input = input.Replace("]", "%5D");
-            input = input.Replace("^", "%5C");
-            input = input.Replace("_", "%5F");
-            input = input.Replace("{", "%7B");
-            input = input.Replace("|", "%7C");
-            input = input.Replace("}", "%7D");
+            string output = "";
 
-            input = input.Replace("%", ".");
+            foreach(char c in input)
+            {
+                if (c < 33) continue; //is no char
+
+                if((c > 32 && c < 48)
+                    || (c > 57 && c < 65)
+                    || (c > 90 && c < 97)
+                    || (c > 122))
+                {
+                    output += $".{((int)c):X2}";
+                } else
+                {
+                    output += c;
+                }
+            }
+            return output;
+
+
+            input = input.Replace(".", ".2E");
+
+            input = input.Replace(" ", ".20");
+            input = input.Replace("!", ".21");
+            input = input.Replace("\"", ".22");
+            input = input.Replace("#", ".23");
+            input = input.Replace("$", ".24");
+            input = input.Replace("%", ".25");
+            input = input.Replace("&", ".26");
+            input = input.Replace("'", ".27");
+            input = input.Replace("(", ".28");
+            input = input.Replace(")", ".29");
+            input = input.Replace("*", ".2A");
+            input = input.Replace("+", ".2B");
+            input = input.Replace(",", ".2C");
+            input = input.Replace("-", ".2D");
+            input = input.Replace("/", ".2F");
+            input = input.Replace(":", ".3A");
+            input = input.Replace(";", ".3B");
+            input = input.Replace("<", ".3C");
+            input = input.Replace("=", ".3D");
+            input = input.Replace(">", ".3E");
+            input = input.Replace("?", ".3F");
+            input = input.Replace("@", ".40");
+            input = input.Replace("[", ".5B");
+            input = input.Replace("\\", ".5C");
+            input = input.Replace("]", ".5D");
+            input = input.Replace("^", ".5E");
+            input = input.Replace("_", ".5F");
+            input = input.Replace("{", ".7B");
+            input = input.Replace("|", ".7C");
+            input = input.Replace("}", ".7D");
+            input = input.Replace("°", ".C2.B0");
+            return input;
+        }
+
+        public string UnescapeString(string input)
+        {
+            string output = "";
+            int i = 0;
+            while(i < input.Length)
+            {
+                if(input[i] == '.')
+                {
+                    string chars = input.Substring(i + 1, 2);
+                    int chari = int.Parse(chars, System.Globalization.NumberStyles.HexNumber);
+                    output += (char)chari;
+                    i += 3;
+                } else
+                {
+                    output += input[i];
+                    i++;
+                }
+            }
+            return output;
+
+
+            input = input.Replace(".25", "%");
+            input = input.Replace(".20", " ");
+            input = input.Replace(".21", "!");
+            input = input.Replace(".22", "\"");
+            input = input.Replace(".23", "#");
+            input = input.Replace(".24", "$");
+            input = input.Replace(".26", "&");
+            input = input.Replace(".28", "(");
+            input = input.Replace(".29", ")");
+            input = input.Replace(".2B", "+");
+            input = input.Replace(".2C", ",");
+            input = input.Replace(".2D", "-");
+            input = input.Replace(".2F", "/");
+            input = input.Replace(".3A", ":");
+            input = input.Replace(".3B", ";");
+            input = input.Replace(".3C", "<");
+            input = input.Replace(".3D", "=");
+            input = input.Replace(".3E", ">");
+            input = input.Replace(".3F", "?");
+            input = input.Replace(".40", "@");
+            input = input.Replace(".5B", "[");
+            input = input.Replace(".5C", "%\\");
+            input = input.Replace(".5D", "]");
+            input = input.Replace(".5C", "^");
+            input = input.Replace(".5F", "_");
+            input = input.Replace(".7B", "{");
+            input = input.Replace(".7C", "|");
+            input = input.Replace(".7D", "}");
+            input = input.Replace(".C2.B0", "°");
+
+            input = input.Replace(".2E", ".");
             return input;
         }
 

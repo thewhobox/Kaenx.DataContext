@@ -34,7 +34,8 @@ public class KnownTypesBinder : ISerializationBinder
         {"TableRow", "l"},
         {"ViewParamModel", "m"},
         {"ComBinding", "n"},
-        {"ParamSlider", "o"}
+        {"ParamSlider", "o"},
+        {"ParamPicture", "p"}
     };
     
     public KnownTypesBinder(string ns) {

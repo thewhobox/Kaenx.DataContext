@@ -67,7 +67,8 @@ namespace Kaenx.DataContext.Project
                     break;
 
                 case LocalConnectionProject.DbConnectionType.MySQL:
-                    optionsBuilder.UseMySql($"Server={_conn.DbHostname};Database={_conn.DbName};Uid={_conn.DbUsername};Pwd={_conn.DbPassword};Connect Timeout=30");
+                    string conns = $"Server={_conn.DbHostname};Database={_conn.DbName};Uid={_conn.DbUsername};Pwd={_conn.DbPassword};Connect Timeout=30";
+                    optionsBuilder.UseMySql(conns, ServerVersion.AutoDetect(conns));
                     break;
             }
         }

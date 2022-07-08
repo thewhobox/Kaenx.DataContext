@@ -62,15 +62,6 @@ namespace Kaenx.DataContext.Import {
 
             if (compress)
             {
-                //    using (var inputStream = new MemoryStream(obj))
-                //    using (var gZipStream = new GZipStream(inputStream, CompressionMode.Decompress))
-                //    using (var streamReader = new StreamReader(gZipStream))
-                //    {
-                //        text = streamReader.ReadToEnd();
-                //    }
-
-
-
                 MemoryStream ms = new MemoryStream(obj);
                 GZipStream gzip = new GZipStream(ms, CompressionMode.Decompress);
                 StreamReader sr = new StreamReader(gzip);
@@ -103,6 +94,7 @@ namespace Kaenx.DataContext.Import {
         public static bool CheckConditions(List<ParamCondition> conds, Dictionary<int, IValues> values)
         {
             bool flag = true;
+            if(conds == null) return true;
 
             foreach (ParamCondition cond in conds)
             {

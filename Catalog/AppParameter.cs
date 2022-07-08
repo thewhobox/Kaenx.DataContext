@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,8 +15,10 @@ namespace Kaenx.DataContext.Catalog
         public int ParameterId { get; set; }
         public int ParameterTypeId { get; set; }
         public int ApplicationId { get; set; }
+        [NotMapped]
         public string Text { get; set; }
         [MaxLength(20)]
+        [NotMapped]
         public string SuffixText { get; set; }
         public string Value { get; set; }
 
@@ -25,6 +28,7 @@ namespace Kaenx.DataContext.Catalog
         public bool UnionDefault { get; set; }
         public int Offset { get; set; }
         public int OffsetBit { get; set; }
+        [NotMapped]
         public AccessType Access { get; set; }
 
         public void LoadPara(AppParameter para)

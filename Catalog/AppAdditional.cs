@@ -12,9 +12,9 @@ namespace Kaenx.DataContext.Catalog
         public int ApplicationId { get; set; }
         public byte[] LoadProcedures { get; set; }
         public byte[] Bindings { get; set; }
-        public byte[] ComsAll { get; set; }
+        public byte[] ComsAll { get; set; } //TODO rename: ComBindings
         public byte[] ComsDefault { get; set; }
-        public byte[] ParamsHelper { get; set; }
+        public byte[] ParamsHelper { get; set; } //TODO rename: Channels
         public byte[] Assignments { get; set; }
     }
 }

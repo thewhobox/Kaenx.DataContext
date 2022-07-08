@@ -645,7 +645,6 @@ namespace Kaenx.DataContext.Import.Manager
                         }
                     }
                 }
-
             }
 
             foreach (IDynChannel ch in Channels)

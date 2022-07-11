@@ -41,6 +41,7 @@ namespace Kaenx.DataContext.Import.Dynamic
         public double Minimum { get; set; }
         [JsonProperty("ma")]
         public double Maximum { get; set; }
+        public double Increment { get; set; }
 
         public bool HasAccess { get; set; } = true;
         public List<ParamCondition> Conditions { get; set; }

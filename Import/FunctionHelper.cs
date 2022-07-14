@@ -91,7 +91,7 @@ namespace Kaenx.DataContext.Import {
             }
         }
 
-        public static bool CheckConditions(List<ParamCondition> conds, Dictionary<int, IValues> values)
+        public static bool CheckConditions(List<ParamCondition> conds, Dictionary<long, IValues> values)
         {
             bool flag = true;
             if(conds == null) return true;

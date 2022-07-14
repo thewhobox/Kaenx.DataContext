@@ -10,9 +10,9 @@ namespace Kaenx.DataContext.Import.Dynamic
     public class ParamBinding
     {
         [JsonProperty("s")]
-        public int SourceId { get; set; } = -2;
+        public long SourceId { get; set; } = -2;
         [JsonProperty("t")]
-        public int TargetId { get; set; } = -2;
+        public long TargetId { get; set; } = -2;
         [JsonProperty("d")]
         public string DefaultText { get; set; }
         [JsonProperty("f")]

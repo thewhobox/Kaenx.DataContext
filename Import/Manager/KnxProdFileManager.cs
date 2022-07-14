@@ -620,7 +620,7 @@ namespace Kaenx.DataContext.Import.Manager
             }
 
 
-            Dictionary<int, IValues> values = new Dictionary<int, IValues>();
+            Dictionary<long, IValues> values = new Dictionary<long, IValues>();
             foreach(AppParameter para in AppParas.Values)
             {
                 values[para.ParameterId] = new StandardValues(para.Value);
@@ -1708,10 +1708,6 @@ namespace Kaenx.DataContext.Import.Manager
                     break;
 
 
-
-                /*case ParamTypes.Picture:
-                    Debug.WriteLine("Es werden Bilder verwendet. Bilder wurden aber noch nicht implementiert.");
-                    break;*/
 
                 default:
                     //Serilog.Log.Error("Parametertyp nicht festgelegt!! " + paraType.Type.ToString());

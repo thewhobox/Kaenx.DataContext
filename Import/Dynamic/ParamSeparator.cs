@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Kaenx.DataContext.Import.Dynamic
 {
-    public class ParamSeperator : IDynParameter
+    public class ParamSeparator : IDynParameter
     {
         public int Id { get; set; }
         public string Text { get; set; }
@@ -21,13 +21,16 @@ namespace Kaenx.DataContext.Import.Dynamic
         private bool _isVisible;
         public bool IsVisible
         {
-            get { return _isVisible; }
+            get { 
+                return _isVisible; }
             set { _isVisible = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("IsVisible")); }
         }
 
         [JsonIgnore]
         [JsonProperty("l")]
-        public bool IsLineVisible { get { return string.IsNullOrEmpty(Text) || string.IsNullOrWhiteSpace(Text); } }
+        public bool IsLineVisible { get { 
+            return string.IsNullOrEmpty(Text) || string.IsNullOrWhiteSpace(Text); 
+            } }
 
         public bool HasAccess { get; set; } = true;
         public List<ParamCondition> Conditions { get; set; }

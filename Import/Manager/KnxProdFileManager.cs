@@ -1331,30 +1331,22 @@ namespace Kaenx.DataContext.Import.Manager
             table.Parameters = fakeBlock.Parameters;
             
             foreach(XElement xrow in xele.Element(XName.Get("Rows", xele.Name.NamespaceName)).Elements()) {
-                string height = xrow.Attribute("Height")?.Value;
-                TableRow row = new TableRow();
-                if(!string.IsNullOrEmpty(height)) {
-                    if(height.Contains("%")){
-                        row.Unit = UnitTypes.Percentage;
-                        row.Height = int.Parse(height.Replace("%", ""));
-                    }
-                }
-                table.Rows.Add(row);
+                string heightAttr = xrow.Attribute("Height")?.Value ?? "0";
+                heightAttr = heightAttr.Replace("%", "");
+                int height = 0;
+                int.TryParse(heightAttr, out height);
+                table.Rows.Add(height);
             }
 
             foreach(XElement xcol in xele.Element(XName.Get("Columns", xele.Name.NamespaceName)).Elements()) {
-                string width = xcol.Attribute("Width")?.Value;
-                TableColumn col = new TableColumn();
-                if(!string.IsNullOrEmpty(width)) {
-                    if(width.Contains("%")){
-                        col.Unit = UnitTypes.Percentage;
-                        col.Width = int.Parse(width.Replace("%", ""));
-                    }
-                }
-                table.Columns.Add(col);
+                string widthAttr = xcol.Attribute("Width")?.Value ?? "0";
+                widthAttr = widthAttr.Replace("%", "");
+                int width = 0;
+                int.TryParse(widthAttr, out width);
+                table.Columns.Add(width);
             }
 
-            foreach(XElement position in xele.Elements()){
+            /*foreach(XElement position in xele.Elements()){
                 if(position.Name.LocalName == "Rows" || position.Name.LocalName == "Columns") continue;
 
                 TablePosition pos = new TablePosition();
@@ -1362,7 +1354,7 @@ namespace Kaenx.DataContext.Import.Manager
                 pos.Row = int.Parse(posStr[0]);
                 pos.Column = int.Parse(posStr[1]);
                 table.Positions.Add(pos);
-            }
+            }*/
 
 
             block.Parameters.Add(table);
@@ -1395,23 +1387,23 @@ namespace Kaenx.DataContext.Import.Manager
             {
                 case null:
                 case "Headline":
-                    sep = new ParamSeperator();
+                    sep = new ParamSeparator();
                     if (hint == "Headline")
-                        (sep as ParamSeperator).Hint = ParamSeparatorHint.Headline;
+                        (sep as ParamSeparator).Hint = ParamSeparatorHint.Headline;
                     else
-                        (sep as ParamSeperator).Hint = ParamSeparatorHint.None;
+                        (sep as ParamSeparator).Hint = ParamSeparatorHint.None;
                     break;
 
                 case "HorizontalRuler":
-                    sep = new ParamSeperator() { Hint = ParamSeparatorHint.HorizontalRuler };
+                    sep = new ParamSeparator() { Hint = ParamSeparatorHint.HorizontalRuler };
                     break;
 
                 case "Error":
-                    sep = new ParamSeperatorBox() { Hint = ParamSeparatorHint.Error };
+                    sep = new ParamSeparatorBox() { Hint = ParamSeparatorHint.Error };
                     break;
 
                 case "Information":
-                    sep = new ParamSeperatorBox() { Hint = ParamSeparatorHint.Information };
+                    sep = new ParamSeparatorBox() { Hint = ParamSeparatorHint.Information };
                     break;
 
                 default:

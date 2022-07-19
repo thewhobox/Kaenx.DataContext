@@ -33,7 +33,6 @@ namespace Kaenx.DataContext.Import.Dynamic
         public bool IsEnabled { get; set; }
 
 
-        [JsonProperty("vi")]
         private bool _isVisible;
         public bool IsVisible
         {
@@ -56,33 +55,12 @@ namespace Kaenx.DataContext.Import.Dynamic
         }
 
 
-        public List<TableColumn> Columns {get;set;} = new List<TableColumn>();
-        public List<TableRow> Rows {get;set;} = new List<TableRow>();
+        public List<int> Columns {get;set;} = new List<int>();
+        public List<int> Rows {get;set;} = new List<int>();
 
         [JsonProperty("c")]
         public List<ParamCondition> Conditions { get; set; } = new List<ParamCondition>();
         [JsonProperty("p")]
         public List<IDynParameter> Parameters { get; set; } = new List<IDynParameter>();
-        public List<TablePosition> Positions {get;set;} = new List<TablePosition>();
-    }
-
-    public class TablePosition {
-        public int Row {get;set;}
-        public int Column {get;set;}
-    }
-
-    public class TableColumn {
-        public float Width {get;set;}
-        public UnitTypes Unit {get;set;}
-    }
-
-    public class TableRow {
-        public float Height {get;set;}
-        public UnitTypes Unit {get;set;}
-    }
-
-    public enum UnitTypes {
-        Percentage,
-        Absolute
     }
 }

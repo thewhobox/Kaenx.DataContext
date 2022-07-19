@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Kaenx.DataContext.Import.Dynamic
 {
-    public class ParamSeperatorBox : IDynParameter
+    public class ParamSeparatorBox : IDynParameter
     {
         public int Id { get; set; }
         public string Text { get; set; }

@@ -10,9 +10,8 @@ namespace Kaenx.DataContext.Import.Dynamic
 {
     public interface IDynParameter: INotifyPropertyChanged
     {
-        //TODO set public
         [JsonProperty("i")]
-        int Id { get; set; }
+        long Id { get; set; }
         [JsonProperty("t")]
         string Text { get; set; }
         [JsonProperty("s")]

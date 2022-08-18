@@ -9,9 +9,9 @@ namespace Kaenx.DataContext.Import.Dynamic
 {
     public class AssignParameter { 
         [JsonProperty("t")]
-        public int Target { get; set; }
+        public long Target { get; set; }
         [JsonProperty("s")]
-        public int Source { get; set; }
+        public long Source { get; set; }
         [JsonProperty("v")]
         public string Value { get; set; }
 

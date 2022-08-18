@@ -25,15 +25,15 @@ namespace Kaenx.DataContext.Import.Manager
 
         private Dictionary<int, List<List<ParamCondition>>> ComConditions;
         private List<ParamBinding> Bindings;
-        private Dictionary<int, AppParameter> AppParas;
+        private Dictionary<long, AppParameter> AppParas;
         private Dictionary<int, AppParameterTypeViewModel> AppParaTypes;
-        private Dictionary<int, AppComObject> ComObjects;
+        private Dictionary<long, AppComObject> ComObjects;
         private List<ComBinding> ComBindings;
         private List<AssignParameter> Assignments;
         private Dictionary<string, int> parameterTypeIds;
         private int counterUnion = 1;
-        private int counterParameter = 1;
-        private int counterComObjects = 0;
+        private long counterParameter = 1;
+        private long counterComObjects = 0;
 
 
         public KnxProdFileManager(string path) : base(path, 8) { }
@@ -383,13 +383,13 @@ namespace Kaenx.DataContext.Import.Manager
 
             if(_context.AppParameters.Any(p => p.ApplicationId == app.Id))
             {
-                int max = _context.AppParameters.Where(p => p.ApplicationId == app.Id).OrderByDescending(p => p.ParameterId).First().ParameterId;
+                long max = _context.AppParameters.Where(p => p.ApplicationId == app.Id).OrderByDescending(p => p.ParameterId).First().ParameterId;
                 counterParameter = ++max;
             }
 
             if(_context.AppComObjects.Any(c => c.ApplicationId == app.Id))
             {
-                int max = _context.AppComObjects.Where(c => c.ApplicationId == app.Id).OrderByDescending(c => c.Id).First().Id;
+                long max = _context.AppComObjects.Where(c => c.ApplicationId == app.Id).OrderByDescending(c => c.Id).First().Id;
                 counterComObjects = ++max;
             }
 
@@ -527,9 +527,9 @@ namespace Kaenx.DataContext.Import.Manager
 
 
             Assignments = new List<AssignParameter>();
-            AppParas = new Dictionary<int, AppParameter>();
+            AppParas = new Dictionary<long, AppParameter>();
             AppParaTypes = new Dictionary<int, AppParameterTypeViewModel>();
-            ComObjects = new Dictionary<int, AppComObject>();
+            ComObjects = new Dictionary<long, AppComObject>();
             ComBindings = new List<ComBinding>();
 
             foreach (AppParameter para in _context.AppParameters.Where(p => p.ApplicationId == appId))
@@ -566,7 +566,7 @@ namespace Kaenx.DataContext.Import.Manager
                 {
                     try
                     {
-                        int paramId = GetItemId(GetAttributeAsString(xele, "ParamRefId"));
+                        long paramId = GetItemId(GetAttributeAsString(xele, "ParamRefId"));
                         AppParameter para = _context.AppParameters.Single(p => p.ParameterId == paramId && p.ApplicationId == appId);
                         text = para.Text;
                         if (para.Access == AccessType.None)
@@ -603,7 +603,7 @@ namespace Kaenx.DataContext.Import.Manager
                     xparent = xparent.Parent;
                 }
 
-                int textRefId = -2;
+                long textRefId = -2;
                 if (xele.Attribute("TextParameterRefId") != null)
                 {
                     textRefId = GetItemId(xele.Attribute("TextParameterRefId").Value);
@@ -615,6 +615,7 @@ namespace Kaenx.DataContext.Import.Manager
                         textRefId = GetItemId(temp.Attribute("TextParameterRefId")?.Value);
                     }
                 }
+                //TODO check what to do with textRefId
 
                 GetChildItems(pb, xele, visibleConds);
             }
@@ -681,19 +682,19 @@ namespace Kaenx.DataContext.Import.Manager
             _context.SaveChanges();
         }
 
-        public string CheckForBindings(ChannelBlock channel, string text, XElement xele, Dictionary<string, string> args = null, Dictionary<string, int> idMapper = null) {
+        public string CheckForBindings(ChannelBlock channel, string text, XElement xele, Dictionary<string, string> args = null, Dictionary<string, long> idMapper = null) {
             return CheckForBindings(text, BindingTypes.Channel, channel.Id, xele, args, idMapper);
         }
 
-        public string CheckForBindings(ParameterBlock block, string text, XElement xele, Dictionary<string, string> args = null, Dictionary<string, int> idMapper = null) {
+        public string CheckForBindings(ParameterBlock block, string text, XElement xele, Dictionary<string, string> args = null, Dictionary<string, long> idMapper = null) {
             return CheckForBindings(text, BindingTypes.ParameterBlock, block.Id,  xele, args, idMapper);
         }
 
-        public string CheckForBindings(AppComObject com, string text, XElement xele, Dictionary<string, string> args = null, Dictionary<string, int> idMapper = null){
+        public string CheckForBindings(AppComObject com, string text, XElement xele, Dictionary<string, string> args = null, Dictionary<string, long> idMapper = null){
             return CheckForBindings(text, BindingTypes.ComObject, com.Id, xele, args, idMapper);
         }
 
-        public string CheckForBindings(string text, BindingTypes type, int targetId, XElement xele, Dictionary<string, string> args, Dictionary<string, int> idMapper) {
+        public string CheckForBindings(string text, BindingTypes type, long targetId, XElement xele, Dictionary<string, string> args, Dictionary<string, long> idMapper) {
             Regex reg = new Regex("{{(.*)}}"); //[A-Za-z0-9: -]
             if(reg.IsMatch(text)){
                 Match match = reg.Match(text);
@@ -714,11 +715,11 @@ namespace Kaenx.DataContext.Import.Manager
                 if(g2.Contains(':')){
                     string[] opts = g2.Split(':');
                     text = text.Replace(match.Groups[0].Value, opts[1]);
-                    bind.SourceId = opts[0] == "0" ? -1 : int.Parse(opts[0]);
+                    bind.SourceId = opts[0] == "0" ? -1 : long.Parse(opts[0]);
                     bind.DefaultText = opts[1];
                 } else {
                     text = text.Replace(match.Groups[0].Value, "");
-                    bind.SourceId = g2 == "0" ? -1 : int.Parse(g2);
+                    bind.SourceId = g2 == "0" ? -1 : long.Parse(g2);
                     bind.DefaultText = "";
                 }
                 }catch{
@@ -848,7 +849,7 @@ namespace Kaenx.DataContext.Import.Manager
                     }
                 }
             
-                Dictionary<string, int> idMapper = ImportAppStatic(xdef.Element(GetXName("Static")), appId, args);
+                Dictionary<string, long> idMapper = ImportAppStatic(xdef.Element(GetXName("Static")), appId, args);
 
                 XElement xmoddyn = XElement.Parse(xdef.Element(GetXName("Dynamic")).ToString());
                 RenameDynamic(xmoddyn, args, idMapper);
@@ -873,14 +874,14 @@ namespace Kaenx.DataContext.Import.Manager
             }
         }
 
-        public void RenameDynamic(XElement xdyn, Dictionary<string, string> args, Dictionary<string, int> idMapper) {
+        public void RenameDynamic(XElement xdyn, Dictionary<string, string> args, Dictionary<string, long> idMapper) {
             List<XElement> xobjs = new List<XElement>();
             xobjs.AddRange(xdyn.Descendants(GetXName("ParameterBlock")));
             xobjs.AddRange(xdyn.Descendants(GetXName("ParameterRefRef")));
             xobjs.AddRange(xdyn.Descendants(GetXName("choose")));
 
             foreach(XElement xref in xobjs){
-                int id = 0;
+                long id = 0;
 
                 switch(xref.Name.LocalName)
                 {
@@ -889,7 +890,7 @@ namespace Kaenx.DataContext.Import.Manager
                         if(xref.Attribute("TextParameterRefId") != null)
                         {
                             id = GetItemId(xref.Attribute("TextParameterRefId").Value);
-                            int newId = idMapper["p"+id];
+                            long newId = idMapper["p"+id];
                             xref.Attribute("TextParameterRefId").Value = "xx_R-" + newId;
                         }
                         break;
@@ -898,7 +899,7 @@ namespace Kaenx.DataContext.Import.Manager
                     case "ParameterRefRef":
                     {
                         id = GetItemId(xref.Attribute("RefId").Value);
-                        int newId = idMapper["p"+id];
+                        long newId = idMapper["p"+id];
                         xref.Attribute("RefId").Value = "xx_R-" + newId;
                         break;
                     }
@@ -906,7 +907,7 @@ namespace Kaenx.DataContext.Import.Manager
                     case "choose":
                     {
                         id = GetItemId(xref.Attribute("ParamRefId").Value);
-                        int newId = idMapper["p"+id];
+                        long newId = idMapper["p"+id];
                         xref.Attribute("ParamRefId").Value = "xx_R-" + newId;
                         break;
                     }
@@ -917,8 +918,8 @@ namespace Kaenx.DataContext.Import.Manager
             }
 
             foreach(XElement xref in xdyn.Descendants(GetXName("ComObjectRefRef"))){
-                int id = GetItemId(xref.Attribute("RefId").Value);
-                int newId = idMapper["c"+id];
+                long id = GetItemId(xref.Attribute("RefId").Value);
+                long newId = idMapper["c"+id];
                 xref.Attribute("RefId").Value = "xx_R-" + newId;
             }
 
@@ -951,20 +952,20 @@ namespace Kaenx.DataContext.Import.Manager
                 }
 
                 if(xobj.Attribute("ParamRefId") != null) {
-                    int id = GetItemId(xobj.Attribute("ParamRefId").Value);
-                    int newId = idMapper["p"+id];
+                    long id = GetItemId(xobj.Attribute("ParamRefId").Value);
+                    long newId = idMapper["p"+id];
                     xobj.Attribute("ParamRefId").Value = "xx_R-" + newId;
                 }
             }
         }
 
-        private Dictionary<string, int> ImportAppStatic(XElement xstatic, int appId, Dictionary<string, string> args = null) {
+        private Dictionary<string, long> ImportAppStatic(XElement xstatic, int appId, Dictionary<string, string> args = null) {
             if(args == null) CurrentState = appName + " - Parameter";
-            Dictionary<string, int> idMapper = new Dictionary<string, int>(); //Mapping old Ids to new one if a ModuleDef is beeing used
+            Dictionary<string, long> idMapper = new Dictionary<string, long>(); //Mapping old Ids to new one if a ModuleDef is beeing used
 
 
             if(xstatic.Element(GetXName("Parameters")) != null) {
-                Dictionary<int, AppParameter> parameters = new Dictionary<int, AppParameter>();
+                Dictionary<long, AppParameter> parameters = new Dictionary<long, AppParameter>();
                 foreach(XElement xitem in xstatic.Element(GetXName("Parameters")).Elements()) {
                     if(xitem.Name.LocalName == "Union") {
                         XElement xmem = xitem.Element(GetXName("Memory"));
@@ -976,7 +977,6 @@ namespace Kaenx.DataContext.Import.Manager
                         if(xitem.Elements().Count() > 0) xmem = xitem.Elements().ElementAt(0);
                         ParseParameter(parameters, args, xitem, xmem);
                     } else {
-                        //TODO log
                         throw new Exception("Kein bekannter Typ bei Parameters: " + xitem.Name.LocalName);
                     }
                 }
@@ -1039,7 +1039,6 @@ namespace Kaenx.DataContext.Import.Manager
                         //msg = "Unbekanntes Segment: " + seg.Name.LocalName;
                         //if (!Errors.Contains(msg))
                         //    Errors.Add(msg);
-                        //TODO Log
                 }
             }
             _context.SaveChanges();
@@ -1083,7 +1082,6 @@ namespace Kaenx.DataContext.Import.Manager
                                     //if (!Errors.Contains(msg))
                                     //    Errors.Add(msg);
                                     //Log.Error("Unbekannter Nummerntyp: " + child.Name.LocalName + " - " + child.Attribute("Type").Value);
-                                    //TODO Log
                                     throw new NotImplementedException("Unbekannter TypeNumber: " + child.Attribute("Type").Value);
                             }
                         }
@@ -1114,7 +1112,6 @@ namespace Kaenx.DataContext.Import.Manager
                                 ParameterId = GetItemId(en.Attribute("Id").Value)
                             };
                             
-                            //TODO prüfen ob langdauernde abfrage notwendig ist
                             enu.Value = en.Attribute(_base).Value;
                             enu.Text = en.Attribute("Text").Value;
                             enu.Order = (en.Attribute("DisplayOrder") == null) ? cenu : int.Parse(en.Attribute("DisplayOrder").Value);
@@ -1162,7 +1159,6 @@ namespace Kaenx.DataContext.Import.Manager
                         //if (!Errors.Contains(msg))
                         //    Errors.Add(msg);
                         //Log.Error("Unbekannter Parametertyp: " + child.Name.LocalName);
-                        //TODO Log
                         throw new NotImplementedException("Unbekannter ParameterType: " + child.Name.LocalName);
                 }
                 if(!modelAdded) _context.AppParameterTypes.Add(model);
@@ -1503,7 +1499,6 @@ namespace Kaenx.DataContext.Import.Manager
                     };
                     try
                     {
-                        //TODO convert to double if float
                         pnu.Minimum = StringToInt(paraType.Tag1);
                         pnu.Maximum = StringToInt(paraType.Tag2);
                     }
@@ -1708,7 +1703,7 @@ namespace Kaenx.DataContext.Import.Manager
             }
         }
 
-        private void ParseComObjects(XElement xstatic, int appId, Dictionary<string, string> args, Dictionary<string, int> idMapper) {
+        private void ParseComObjects(XElement xstatic, int appId, Dictionary<string, string> args, Dictionary<string, long> idMapper) {
             XElement xobjs = xstatic.Element(GetXName("ComObjectTable"));
             XElement xrefs = xstatic.Element(GetXName("ComObjectRefs"));
             if(xobjs == null)
@@ -1775,15 +1770,14 @@ namespace Kaenx.DataContext.Import.Manager
                 if(HasAttribute(xref, "Size")) com.SetSize(GetAttributeAsString(xref, "Size"));
 
                 if (idMapper != null) {
-                    int oldId = com.Id;
+                    long oldId = com.Id;
                     com.Id = counterComObjects++;
                     idMapper.Add("c" + oldId, com.Id);
 
-                    //TODO also rename TextParameterRefID in parameterblock
                     if(xref.Attribute("TextParameterRefId") != null)
                     {
-                        int id = GetItemId(xref.Attribute("TextParameterRefId").Value);
-                        int newId = idMapper["p" + id];
+                        long id = GetItemId(xref.Attribute("TextParameterRefId").Value);
+                        long newId = idMapper["p" + id];
                         xref.Attribute("TextParameterRefId").Value = "...R-" + newId;
                     }
                 }
@@ -1808,7 +1802,7 @@ namespace Kaenx.DataContext.Import.Manager
             _context.SaveChanges();
         }
 
-        private void ParseParameter(Dictionary<int, AppParameter> parameters, Dictionary<string, string> args, XElement xpara, XElement xmem = null, int unionId = 0)
+        private void ParseParameter(Dictionary<long, AppParameter> parameters, Dictionary<string, string> args, XElement xpara, XElement xmem = null, int unionId = 0)
         {
             AppParameter param = new AppParameter
             {
@@ -1868,10 +1862,10 @@ namespace Kaenx.DataContext.Import.Manager
             parameters.Add(param.ParameterId, param);
         }
 
-        private void ParseParameterRefs(Dictionary<int, AppParameter> parameters, XElement refs, int appId, Dictionary<string, int> idMapper) {
+        private void ParseParameterRefs(Dictionary<long, AppParameter> parameters, XElement refs, int appId, Dictionary<string, long> idMapper) {
 
             foreach(XElement xref in refs.Elements()) {
-                int pId = GetItemId(xref.Attribute("Id").Value);
+                long pId = GetItemId(xref.Attribute("Id").Value);
                 AppParameter old = parameters[GetItemId(xref.Attribute("RefId").Value)];
                 AppParameter final = new AppParameter();
                 final.LoadPara(old);
@@ -2248,11 +2242,11 @@ namespace Kaenx.DataContext.Import.Manager
             return (ele.Attribute(attr) == null) ? null : ele.Attribute(attr).Value;
         }
 
-        private int GetItemId(string id)
+        private long GetItemId(string id)
         {
             id = id.Substring(id.LastIndexOf("-") + 1);
-            int id2;
-            if (!int.TryParse(id, out id2))
+            long id2;
+            if (!long.TryParse(id, out id2))
                 id2 = 999999;
             return id2;
         }

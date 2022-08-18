@@ -11,7 +11,7 @@ namespace Kaenx.DataContext.Catalog
     {
         [Key]
         public int UId { get; set; }
-        public int Id { get; set; }
+        public long Id { get; set; }
         public int ApplicationId { get; set; }
 
         [MaxLength(100)]

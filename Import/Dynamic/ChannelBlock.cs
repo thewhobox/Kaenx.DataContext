@@ -15,7 +15,7 @@ namespace Kaenx.DataContext.Import.Dynamic
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        public int Id { get; set; }
+        public long Id { get; set; }
         public string Name { get; set; }
         public string DefaultText { get; set; }
         public bool HasAccess { get; set; } = true;

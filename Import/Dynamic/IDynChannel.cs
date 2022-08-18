@@ -9,8 +9,7 @@ namespace Kaenx.DataContext.Import.Dynamic
 {
     public interface IDynChannel
     {
-        //TODO set public
-        int Id { get; set; }
+        long Id { get; set; }
         [JsonProperty("ha")]
         bool HasAccess { get; set; }
         [JsonProperty("bl")]

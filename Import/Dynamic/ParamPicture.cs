@@ -14,7 +14,7 @@ namespace Kaenx.DataContext.Import.Dynamic
 
         public event PictureRequestHandler OnPictureRequest;
 
-        public int Id { get; set; }
+        public long Id { get; set; }
         public string Text { get; set; }
         public string SuffixText { get; set; }
         public string Default { get; set; }

@@ -12,7 +12,7 @@ namespace Kaenx.DataContext.Catalog
         [Key]
         public int Id { get; set; }
         public int TypeId { get; set; }
-        public int ParameterId { get; set; } //TODO what the heck? is it necsessary?
+        public long ParameterId { get; set; } //TODO what the heck? is it necsessary?
         [MaxLength(100)]
         public string Text { get; set; }
         [MaxLength(100)]

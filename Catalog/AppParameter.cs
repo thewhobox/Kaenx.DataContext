@@ -12,7 +12,7 @@ namespace Kaenx.DataContext.Catalog
     {
         [Key]
         public int Id { get; set; }
-        public int ParameterId { get; set; }
+        public long ParameterId { get; set; }
         public int ParameterTypeId { get; set; }
         public int ApplicationId { get; set; }
         public string Text { get; set; }

@@ -110,37 +110,40 @@ namespace Kaenx.DataContext.Import {
                         break;
 
                     case ConditionOperation.Default:
-                        string[] defConds = cond.Values.Split(',');
-                        int paraValInt = int.Parse(paraValue);
-
-                        foreach(string defCond in defConds)
+                        if(!string.IsNullOrEmpty(cond.Values))
                         {
-                            if (!flag) break;
+                            string[] defConds = cond.Values.Split(',');
+                            int paraValInt = int.Parse(paraValue);
 
-                            if (defCond.StartsWith("<="))
+                            foreach(string defCond in defConds)
                             {
-                                int def = int.Parse(defCond.Substring(2));
-                                if (paraValInt <= def) flag = false;
-                            }
-                            else if (defCond.StartsWith("<"))
-                            {
-                                int def = int.Parse(defCond.Substring(1));
-                                if (paraValInt < def) flag = false;
-                            }
-                            else if (defCond.StartsWith(">="))
-                            {
-                                int def = int.Parse(defCond.Substring(2));
-                                if (paraValInt >= def) flag = false;
-                            }
-                            else if (defCond.StartsWith(">"))
-                            {
-                                int def = int.Parse(defCond.Substring(1));
-                                if (paraValInt > def) flag = false;
-                            }
-                            else
-                            {
-                                int def = int.Parse(defCond);
-                                if (paraValInt == def) flag = false;
+                                if (!flag) break;
+
+                                if (defCond.StartsWith("<="))
+                                {
+                                    int def = int.Parse(defCond.Substring(2));
+                                    if (paraValInt <= def) flag = false;
+                                }
+                                else if (defCond.StartsWith("<"))
+                                {
+                                    int def = int.Parse(defCond.Substring(1));
+                                    if (paraValInt < def) flag = false;
+                                }
+                                else if (defCond.StartsWith(">="))
+                                {
+                                    int def = int.Parse(defCond.Substring(2));
+                                    if (paraValInt >= def) flag = false;
+                                }
+                                else if (defCond.StartsWith(">"))
+                                {
+                                    int def = int.Parse(defCond.Substring(1));
+                                    if (paraValInt > def) flag = false;
+                                }
+                                else
+                                {
+                                    int def = int.Parse(defCond);
+                                    if (paraValInt == def) flag = false;
+                                }
                             }
                         }
                         break;

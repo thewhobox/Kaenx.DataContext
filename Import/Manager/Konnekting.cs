@@ -298,7 +298,7 @@ namespace Kaenx.DataContext.Import.Manager
                     adds.ParamsHelper = FunctionHelper.ObjectToByteArray(Channels, true, "Kaenx.DataContext.Import.Dynamic");
                     
                     CurrentState = "Kommunikationsobjekte";
-                    List<int> comsDefault = new List<int>();
+                    List<long> comsDefault = new List<long>();
                     foreach(XElement xcom in xdevice.Element(GetXName("CommObjects")).Elements()) {
                         AppComObject com = null;
                         int comNumber = int.Parse(xcom.Attribute("Id").Value);
@@ -354,19 +354,19 @@ namespace Kaenx.DataContext.Import.Manager
         }
 
 
-        private List<ParamCondition> GenerateConditionsParameter(int eleId, XElement xdevice) {
+        private List<ParamCondition> GenerateConditionsParameter(long eleId, XElement xdevice) {
             return GenerateConditions(eleId, xdevice, "Parameter", "Param");
         }
 
-        private List<ParamCondition> GenerateConditionsParameterGroup(int eleId, XElement xdevice) {
+        private List<ParamCondition> GenerateConditionsParameterGroup(long eleId, XElement xdevice) {
             return GenerateConditions(eleId, xdevice, "ParameterGroup", "ParamGroup");
         }
 
-        private List<ParamCondition> GenerateConditionsComObjects(int eleId, XElement xdevice) {
+        private List<ParamCondition> GenerateConditionsComObjects(long eleId, XElement xdevice) {
             return GenerateConditions(eleId, xdevice, "CommObject", "CommObj");
         }
 
-        private List<ParamCondition> GenerateConditions(int paramId, XElement xdevice, string type, string attr) {
+        private List<ParamCondition> GenerateConditions(long paramId, XElement xdevice, string type, string attr) {
             List<ParamCondition> conds = new List<ParamCondition>();
 
             var paramDependencies = xdevice.Element(GetXName("Dependencies"))?.Elements(GetXName(type + "Dependency")).Where(d => d.Attribute(attr + "Id").Value == paramId.ToString());
@@ -413,7 +413,7 @@ namespace Kaenx.DataContext.Import.Manager
             return conds;
         }
 
-        private AppParameterTypeViewModel GenerateParameterType(int appId, int paraId, XElement xvalue) {
+        private AppParameterTypeViewModel GenerateParameterType(int appId, long paraId, XElement xvalue) {
             string xtype = xvalue.Attribute("Type").Value;
             AppParameterTypeViewModel paraType = null;
 

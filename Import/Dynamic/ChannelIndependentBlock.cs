@@ -8,7 +8,7 @@ namespace Kaenx.DataContext.Import.Dynamic
 {
     public class ChannelIndependentBlock : IDynChannel
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public bool HasAccess { get; set; } = true;
         public List<ParameterBlock> Blocks { get; set; } = new List<ParameterBlock>();
         public bool IsVisible { get; set; }

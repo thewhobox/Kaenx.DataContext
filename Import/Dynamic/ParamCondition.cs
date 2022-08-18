@@ -11,7 +11,7 @@ namespace Kaenx.DataContext.Import.Dynamic
     {
 
         [JsonProperty("s")]
-        public int SourceId { get; set; }
+        public long SourceId { get; set; }
         [JsonProperty("v")]
         public string Values { get; set; }
         [JsonProperty("o")]

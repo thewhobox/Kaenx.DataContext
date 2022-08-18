@@ -17,7 +17,7 @@ namespace Kaenx.DataContext.Import.Dynamic
         }
 
         [JsonProperty("i")]
-        public int Id { get; set; }
+        public long Id { get; set; }
         [JsonProperty("a")]
         public bool HasAccess { get; set; } = true;
         [JsonProperty("t")]

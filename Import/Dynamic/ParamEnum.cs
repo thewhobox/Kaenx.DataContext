@@ -14,6 +14,8 @@ namespace Kaenx.DataContext.Import.Dynamic
         public string Text { get; set; }
         public string SuffixText { get; set; }
         public string Default { get; set; }
+        [Newtonsoft.Json.JsonIgnore]
+        public int DisplayOrder { get; set; }
 
         private string _value;
         public string Value
@@ -28,9 +30,9 @@ namespace Kaenx.DataContext.Import.Dynamic
             get { return _isVisible; }
             set
             {
+                _isVisible = value;
                 if (_isVisible != value)
                     Changed("ParamVisibility");
-                _isVisible = value;
                 Changed("IsVisible");
             }
         }

@@ -31,6 +31,8 @@ namespace Kaenx.DataContext.Import.Dynamic
         public string Default { get; set; }
         [JsonProperty("e")]
         public bool IsEnabled { get; set; }
+        [Newtonsoft.Json.JsonIgnore]
+        public int DisplayOrder { get; set; }
 
 
         private bool _isVisible;

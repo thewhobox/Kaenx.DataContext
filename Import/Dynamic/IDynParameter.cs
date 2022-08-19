@@ -30,5 +30,6 @@ namespace Kaenx.DataContext.Import.Dynamic
         bool IsVisible { get; set; }
         [JsonProperty("c")]
         List<ParamCondition> Conditions { get; set; }
+        int DisplayOrder { get; set; }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -19,6 +20,8 @@ namespace Kaenx.DataContext.Catalog
         [MaxLength(20)]
         public string SuffixText { get; set; }
         public string Value { get; set; }
+        [NotMapped]
+        public int DisplayOrder { get; set; }
 
         public int SegmentId { get; set; } = -1;
         public SegmentTypes SegmentType { get; set; }

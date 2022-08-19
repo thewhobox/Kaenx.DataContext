@@ -618,6 +618,7 @@ namespace Kaenx.DataContext.Import.Manager
                 //TODO check what to do with textRefId
 
                 GetChildItems(pb, xele, visibleConds);
+                pb.Parameters.Sort((a, b) => a.DisplayOrder.CompareTo(b.DisplayOrder));
             }
 
 
@@ -1899,6 +1900,7 @@ namespace Kaenx.DataContext.Import.Manager
                         break;
                 }
                 final.Access = access == AccessType.Null ? old.Access : access;
+                final.DisplayOrder = int.Parse(xref.Attribute("DisplayOrder")?.Value ?? "-1");
                 _context.AppParameters.Add(final);
             }
         }

@@ -14,6 +14,8 @@ namespace Kaenx.DataContext.Import.Dynamic
         public string SuffixText { get; set; }
         public string Default { get; set; }
         public ParamSeparatorHint Hint { get; set; }
+        [Newtonsoft.Json.JsonIgnore]
+        public int DisplayOrder { get; set; }
 
         public string Value { get; set; }
 

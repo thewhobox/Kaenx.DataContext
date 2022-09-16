@@ -696,7 +696,19 @@ namespace Kaenx.DataContext.Import.Manager
         }
 
         public string CheckForBindings(string text, BindingTypes type, long targetId, XElement xele, Dictionary<string, string> args, Dictionary<string, long> idMapper) {
-            Regex reg = new Regex("{{(.*)}}"); //[A-Za-z0-9: -]
+            Regex reg = new Regex("{{([A-Za-z]*)}}");
+
+            if(args != null && reg.IsMatch(text))
+            {
+                Match match = reg.Match(text);
+                string g2 = match.Groups[1].Value;
+                if(args != null && args.ContainsKey(g2)) {
+                    //Argument von Modul einsetzen
+                    text = text.Replace(match.Groups[0].Value, args[g2]);
+                }
+            }
+            
+            reg = new Regex("{{([0-9]{1,99}(:.+)?)}}");
             if(reg.IsMatch(text)){
                 Match match = reg.Match(text);
                 string g2 = match.Groups[1].Value;
@@ -737,27 +749,6 @@ namespace Kaenx.DataContext.Import.Manager
                     } else
                     {
                         throw new Exception("Object enthält dynamischen Text mit Referenz 0, hat aber kein Attribut mit TextParameterRefId");
-                        //XElement xstatic = xele;
-                        //while (true)
-                        //{
-                        //    xstatic = xstatic.Parent;
-                        //    if (xstatic.Name.LocalName == "Static") break;
-                        //}
-                        //if (xstatic.Parent.Element(GetXName("Dynamic")) != null)
-                        //{
-                        //    XElement xdyn = xstatic.Parent.Element(GetXName("Dynamic"));
-                        //    XElement xref = xdyn.Descendants(GetXName("ComObjectRefRef")).First(co => co.Attribute("RefId").Value == GetAttributeAsString(xele, "Id"));
-
-                        //    while (true)
-                        //    {
-                        //        xref = xref.Parent;
-                        //        if (xref.Name.LocalName == "ParameterBlock") break;
-                        //    }
-                        //    string bindId = GetAttributeAsString(xref, "TextParameterRefId");
-                        //    if (string.IsNullOrEmpty(bindId))
-                        //        throw new Exception("Kein TextParameterRefId für KO gefunden");
-                        //    bind.SourceId = GetItemId(bindId);
-                        //}
                     }
                 }
                 
@@ -2246,6 +2237,9 @@ namespace Kaenx.DataContext.Import.Manager
 
         private long GetItemId(string id)
         {
+            //TODO also expect M-0002_A-20DE-22-4365-O000A_MD-1_O-2-0
+            //M-0002_A-20DE-22-4365-O000A_MD-1_O-4-0
+            //to not be the same
             id = id.Substring(id.LastIndexOf("-") + 1);
             long id2;
             if (!long.TryParse(id, out id2))

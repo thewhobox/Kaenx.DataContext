@@ -10,7 +10,7 @@ namespace Kaenx.DataContext.Import.Dynamic
 {
     public class ParamPicture : IDynParameter
     {
-        public delegate object PictureRequestHandler(int BaggageId);
+        public delegate object PictureRequestHandler(string BaggageId);
 
         public event PictureRequestHandler OnPictureRequest;
 
@@ -23,7 +23,7 @@ namespace Kaenx.DataContext.Import.Dynamic
         public int DisplayOrder { get; set; }
 
         public string Value { get; set; }
-        public int BaggageId { get; set; }
+        public string BaggageId { get; set; }
 
         [JsonIgnore]
         public object _image;

@@ -50,10 +50,10 @@ namespace Kaenx.DataContext.Import.Dynamic
         }
 
         [JsonProperty("mi")]
-        public float Minimum { get; set; }
+        public double Minimum { get; set; }
         [JsonProperty("ma")]
-        public float Maximum { get; set; }
-        public float Increment { get; set; } = 1;
+        public double Maximum { get; set; }
+        public double Increment { get; set; } = 1;
 
         public bool HasAccess { get; set; }
         public bool IsEnabled { get; set; } = true;

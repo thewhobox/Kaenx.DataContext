@@ -17,6 +17,7 @@ namespace Kaenx.DataContext.Import.Dynamic
         public ParamSeparatorHint Hint { get; set; }
         [Newtonsoft.Json.JsonIgnore]
         public int DisplayOrder { get; set; }
+        public string Helptext { get; set; }
 
         public string Value { get; set; }
 

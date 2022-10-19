@@ -11,7 +11,6 @@ namespace Kaenx.DataContext.Import.Dynamic
     public class ParamPicture : IDynParameter
     {
         public delegate object PictureRequestHandler(string BaggageId);
-
         public event PictureRequestHandler OnPictureRequest;
 
         public long Id { get; set; }
@@ -21,6 +20,7 @@ namespace Kaenx.DataContext.Import.Dynamic
         public ParamSeparatorHint Hint { get; set; }
         [Newtonsoft.Json.JsonIgnore]
         public int DisplayOrder { get; set; }
+        public string Helptext { get; set; }
 
         public string Value { get; set; }
         public string BaggageId { get; set; }

@@ -31,5 +31,6 @@ namespace Kaenx.DataContext.Import.Dynamic
         [JsonProperty("c")]
         List<ParamCondition> Conditions { get; set; }
         int DisplayOrder { get; set; }
+        string Helptext { get; set; }
     }
 }

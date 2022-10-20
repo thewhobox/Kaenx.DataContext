@@ -37,7 +37,6 @@ namespace Kaenx.DataContext.Import.Manager
             set { _currentState = value; Changed("CurrentState"); StateChanged?.Invoke(value); ProgressStateChanged(); }
         }
 
-        private bool isFinished = true;
         private double deviceStep;
         private int deviceCount;
         private double stateStep;

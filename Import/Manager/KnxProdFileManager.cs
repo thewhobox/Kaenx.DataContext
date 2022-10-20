@@ -2018,7 +2018,6 @@ namespace Kaenx.DataContext.Import.Manager
                 //Log.Error(e, "Generiere Konditionen ist fehlgeschlagen");
                 throw new Exception("Generiere Konditionen ist fehlgeschlagen", e);
             }
-            return conds;
         }
 
         private void TranslateXml(XElement xml, string selectedLang)
@@ -2096,42 +2095,6 @@ namespace Kaenx.DataContext.Import.Manager
                 }
             }
             return output;
-
-
-            input = input.Replace(".", ".2E");
-
-            input = input.Replace(" ", ".20");
-            input = input.Replace("!", ".21");
-            input = input.Replace("\"", ".22");
-            input = input.Replace("#", ".23");
-            input = input.Replace("$", ".24");
-            input = input.Replace("%", ".25");
-            input = input.Replace("&", ".26");
-            input = input.Replace("'", ".27");
-            input = input.Replace("(", ".28");
-            input = input.Replace(")", ".29");
-            input = input.Replace("*", ".2A");
-            input = input.Replace("+", ".2B");
-            input = input.Replace(",", ".2C");
-            input = input.Replace("-", ".2D");
-            input = input.Replace("/", ".2F");
-            input = input.Replace(":", ".3A");
-            input = input.Replace(";", ".3B");
-            input = input.Replace("<", ".3C");
-            input = input.Replace("=", ".3D");
-            input = input.Replace(">", ".3E");
-            input = input.Replace("?", ".3F");
-            input = input.Replace("@", ".40");
-            input = input.Replace("[", ".5B");
-            input = input.Replace("\\", ".5C");
-            input = input.Replace("]", ".5D");
-            input = input.Replace("^", ".5E");
-            input = input.Replace("_", ".5F");
-            input = input.Replace("{", ".7B");
-            input = input.Replace("|", ".7C");
-            input = input.Replace("}", ".7D");
-            input = input.Replace("°", ".C2.B0");
-            return input;
         }
 
         public string UnescapeString(string input)
@@ -2153,40 +2116,6 @@ namespace Kaenx.DataContext.Import.Manager
                 }
             }
             return output;
-
-
-            input = input.Replace(".25", "%");
-            input = input.Replace(".20", " ");
-            input = input.Replace(".21", "!");
-            input = input.Replace(".22", "\"");
-            input = input.Replace(".23", "#");
-            input = input.Replace(".24", "$");
-            input = input.Replace(".26", "&");
-            input = input.Replace(".28", "(");
-            input = input.Replace(".29", ")");
-            input = input.Replace(".2B", "+");
-            input = input.Replace(".2C", ",");
-            input = input.Replace(".2D", "-");
-            input = input.Replace(".2F", "/");
-            input = input.Replace(".3A", ":");
-            input = input.Replace(".3B", ";");
-            input = input.Replace(".3C", "<");
-            input = input.Replace(".3D", "=");
-            input = input.Replace(".3E", ">");
-            input = input.Replace(".3F", "?");
-            input = input.Replace(".40", "@");
-            input = input.Replace(".5B", "[");
-            input = input.Replace(".5C", "%\\");
-            input = input.Replace(".5D", "]");
-            input = input.Replace(".5C", "^");
-            input = input.Replace(".5F", "_");
-            input = input.Replace(".7B", "{");
-            input = input.Replace(".7C", "|");
-            input = input.Replace(".7D", "}");
-            input = input.Replace(".C2.B0", "°");
-
-            input = input.Replace(".2E", ".");
-            return input;
         }
 
         public bool HasAttribute(XElement ele, string attr){

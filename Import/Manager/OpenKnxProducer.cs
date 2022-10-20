@@ -15,7 +15,7 @@ namespace Kaenx.DataContext.Import.Manager
     public class OpenKnxProducer : IManager
     {
         private KnxProdFileManager _manager;
-        private string _zipPath;
+        private string _zipPath = "";
         private string manu;
 
         public OpenKnxProducer(string path) : base(path, 8) { }
